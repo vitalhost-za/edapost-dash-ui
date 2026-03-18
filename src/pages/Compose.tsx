@@ -290,8 +290,11 @@ export default function Compose() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Subject *</Label>
-                <Input placeholder="Email subject line" value={subject} onChange={(e) => setSubject(e.target.value)} />
+                <div className="flex items-center justify-between">
+                  <Label>Subject *</Label>
+                  <MergeTagPicker onInsert={(tag) => setSubject((prev) => prev + tag)} />
+                </div>
+                <Input placeholder="Email subject line — use {{name}} for personalization" value={subject} onChange={(e) => setSubject(e.target.value)} />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
