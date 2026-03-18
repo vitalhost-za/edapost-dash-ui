@@ -127,24 +127,43 @@ export default function Servers() {
 
   const handleTestConnection = async (server: SmtpServer) => {
     setTestingId(server.id);
-    // Simulate connection test — in production this would call an edge function
-    // that attempts to connect to the Postfix server via SMTP
-    await new Promise((r) => setTimeout(r, 2000));
 
-    // For now, toggle status based on a simulated check
-    const newStatus = server.status === "online" ? "online" : "online";
-    const { error } = await supabase
-      .from("smtp_servers")
-      .update({ status: newStatus, last_heartbeat: new Date().toISOString() })
-      .eq("id", server.id);
+    try {
+      const { data, error } = await supabase.functions.invoke("test-smtp-connection", {
+        body: {
+          server_id: server.id,
+          hostname: server.hostname,
+          ip_address: server.ip_address,
+          port: server.port,
+          tls_enabled: server.tls_enabled,
+        },
+      });
 
-    setTestingId(null);
+      if (error) throw error;
 
-    if (error) {
-      toast.error("Connection test failed: " + error.message);
-    } else {
       queryClient.invalidateQueries({ queryKey: ["smtp-servers"] });
-      toast.success(`Connection to ${server.hostname} successful`);
+
+      if (data.success) {
+        const details = [
+          data.banner && `Banner: ${data.banner}`,
+          `Latency: ${data.latency_ms}ms`,
+          data.tls_ok ? "TLS: ✓" : server.tls_enabled ? "TLS: not supported" : null,
+        ].filter(Boolean).join(" · ");
+
+        toast.success(`Connection to ${server.hostname} successful`, {
+          description: details,
+        });
+      } else {
+        toast.error(`Connection to ${server.hostname} failed`, {
+          description: data.error || "Could not reach the server",
+        });
+      }
+    } catch (err) {
+      toast.error("Connection test error", {
+        description: (err as Error).message,
+      });
+    } finally {
+      setTestingId(null);
     }
   };
 
