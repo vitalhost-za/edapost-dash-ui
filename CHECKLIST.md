@@ -38,8 +38,8 @@
 - [ ] Set PTR (reverse DNS) via VPS provider: server IP → `mail.edapost.net`
 - [ ] Add SPF TXT record: `v=spf1 ip4:<SERVER_IP> -all`
 - [ ] Add DMARC TXT record on `_dmarc.edapost.net`
-- [x] Verify all DNS records with `dig` or online checker
-- [x] Confirm PTR record resolves correctly
+- ✅ Verify all DNS records with `dig` or online checker
+- ✅ Confirm PTR record resolves correctly
 
 ---
 
@@ -91,10 +91,10 @@
 - [ ] Test Redis connectivity
 
 ### 6b. Email API
-- [x] Design email job payload schema (to, from, subject, body, headers, metadata)
-- [x] Implement internal API endpoint to accept email payloads
-- [x] Implement enqueue logic (push JSON job to Redis queue)
-- [x] Return job ID to caller
+- ✅ Design email job payload schema (to, from, subject, body, headers, metadata)
+- ✅ Implement internal API endpoint to accept email payloads
+- ✅ Implement enqueue logic (push JSON job to Redis queue)
+- ✅ Return job ID to caller
 - [ ] Write unit tests for the email API
 
 ### 6c. SMTP Worker
@@ -108,7 +108,7 @@
 
 ### 6d. Rate Limiting
 - [ ] Implement per-domain sending rate limits
-- [x] Make rate limits configurable
+- ✅ Make rate limits configurable
 - [ ] Test rate limiting under load
 
 ---
@@ -133,8 +133,8 @@
 - [ ] Log complaints for analytics
 
 ### 7c. Suppression List
-- [x] Create suppression list database/table
-- [x] Populate with hard bounces, complaints, manual unsubscribes
+- ✅ Create suppression list database/table
+- ✅ Populate with hard bounces, complaints, manual unsubscribes
 - [ ] Integrate suppression check into queue worker (pre-send)
 - [ ] Write tests for suppression list logic
 
@@ -163,10 +163,10 @@
 - [ ] Configure Prometheus to scrape all exporters
 
 ### 9b. Email Metrics
-- [x] Track emails sent per minute (from queue worker)
-- [x] Track delivery success rate (from Postfix logs)
-- [x] Track bounce rate (from bounce processor)
-- [x] Track complaint rate (from FBL processor)
+- ✅ Track emails sent per minute (from queue worker)
+- ✅ Track delivery success rate (from Postfix logs)
+- ✅ Track bounce rate (from bounce processor)
+- ✅ Track complaint rate (from FBL processor)
 - [ ] Track queue depth (Redis)
 - [ ] Track queue latency / oldest job age (Redis)
 
@@ -190,13 +190,13 @@
 ## Phase 10: EdaPost Application Integration
 
 - [ ] Build internal email sending SDK/library
-- [x] Implement `send_email()` interface (to, from, subject, html, text, headers, metadata)
-- [x] Implement webhook/status callback system
-- [x] Track statuses: queued, sent, delivered, bounced, complained
-- [x] Store email events in database for per-email tracking
-- [x] Implement email template rendering (HTML + plain text MIME)
+- ✅ Implement `send_email()` interface (to, from, subject, html, text, headers, metadata)
+- ✅ Implement webhook/status callback system
+- ✅ Track statuses: queued, sent, delivered, bounced, complained
+- ✅ Store email events in database for per-email tracking
+- ✅ Implement email template rendering (HTML + plain text MIME)
 - [ ] Inline CSS in HTML templates
-- [x] Add `List-Unsubscribe` and `List-Unsubscribe-Post` headers to bulk emails
+- ✅ Add `List-Unsubscribe` and `List-Unsubscribe-Post` headers to bulk emails
 - [ ] Process unsubscribe requests and update suppression list
 - [ ] Write integration tests for end-to-end email flow
 
