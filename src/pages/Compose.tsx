@@ -57,10 +57,17 @@ export default function Compose() {
 
   const saveMutation = useMutation({
     mutationFn: async (status: "draft" | "scheduled" | "sending") => {
-      const recipients = toField
+      const rawEntries = toField
         .split(/[,;\n]+/)
         .map((e) => e.trim())
-        .filter((e) => e.includes("@"));
+        .filter(Boolean);
+
+      const recipients = rawEntries.map((entry) => {
+        const match = entry.match(/^(.+?)\s*<(.+@.+)>$/);
+        if (match) return { email: match[2].trim(), name: match[1].trim() };
+        if (entry.includes("@")) return { email: entry, name: undefined };
+        return null;
+      }).filter((r): r is { email: string; name: string | undefined } => r !== null);
 
       const customHeaders = headers.filter((h) => h.key.trim() && h.value.trim());
 
