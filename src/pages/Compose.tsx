@@ -240,10 +240,39 @@ export default function Compose() {
     saveMutation.mutate(scheduleConfig.scheduledAt ? "scheduled" : "sending");
   };
 
+  // Parse recipients for preview picker
+  const parsedRecipients = useMemo(() => {
+    return toField
+      .split(/[,;\n]+/)
+      .map((e) => e.trim())
+      .filter(Boolean)
+      .map((entry) => {
+        const match = entry.match(/^(.+?)\s*<(.+@.+)>$/);
+        if (match) return { email: match[2].trim(), name: match[1].trim() };
+        if (entry.includes("@")) return { email: entry, name: "" };
+        return null;
+      })
+      .filter((r): r is { email: string; name: string } => r !== null);
+  }, [toField]);
+
+  const [previewRecipientIdx, setPreviewRecipientIdx] = useState(0);
+
+  const previewRecipient = parsedRecipients[previewRecipientIdx] || null;
+
   const previewHtml = useMemo(() => {
     if (!htmlBody.trim()) return "";
-    return htmlBody.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "");
-  }, [htmlBody]);
+    let html = htmlBody.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "");
+    if (previewRecipient) {
+      html = replaceMergeTags(html, previewRecipient);
+    }
+    return html;
+  }, [htmlBody, previewRecipient]);
+
+  const previewSubject = useMemo(() => {
+    if (!subject) return "";
+    if (previewRecipient) return replaceMergeTags(subject, previewRecipient);
+    return subject;
+  }, [subject, previewRecipient]);
 
   return (
     <DashboardLayout>
@@ -499,11 +528,33 @@ export default function Compose() {
                 </div>
               </div>
 
+              {/* Recipient preview selector */}
+              {parsedRecipients.length > 0 && (
+                <div className="mb-3 p-2.5 bg-primary/5 border border-primary/10 rounded-md">
+                  <p className="text-[10px] font-medium text-muted-foreground mb-1.5">Preview as recipient</p>
+                  <Select
+                    value={String(previewRecipientIdx)}
+                    onValueChange={(v) => setPreviewRecipientIdx(Number(v))}
+                  >
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {parsedRecipients.map((r, i) => (
+                        <SelectItem key={i} value={String(i)}>
+                          {r.name ? `${r.name} (${r.email})` : r.email}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
               {/* Subject preview */}
-              {subject && (
+              {previewSubject && (
                 <div className="mb-3 p-2.5 bg-secondary rounded-md">
                   <p className="text-xs text-muted-foreground">Subject</p>
-                  <p className="text-sm font-medium text-foreground mt-0.5">{subject}</p>
+                  <p className="text-sm font-medium text-foreground mt-0.5">{previewSubject}</p>
                 </div>
               )}
 
