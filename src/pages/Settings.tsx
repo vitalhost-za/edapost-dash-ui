@@ -814,6 +814,9 @@ export default function SettingsPage() {
                             checked={w.is_active}
                             onCheckedChange={(v) => toggleWebhookMutation.mutate({ id: w.id, is_active: v })}
                           />
+                          <Button variant="ghost" size="icon" className="h-7 w-7" title="Send test event" onClick={() => testWebhookMutation.mutate(w.id)} disabled={testWebhookMutation.isPending}>
+                            <Send className="h-3 w-3" />
+                          </Button>
                           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditWebhook(w)}>
                             <Pencil className="h-3 w-3" />
                           </Button>
