@@ -162,6 +162,47 @@ export type Database = {
           },
         ]
       }
+      campaign_attachments: {
+        Row: {
+          campaign_id: string | null
+          content_type: string
+          created_at: string
+          file_name: string
+          file_size: number
+          id: string
+          storage_path: string
+          user_id: string
+        }
+        Insert: {
+          campaign_id?: string | null
+          content_type: string
+          created_at?: string
+          file_name: string
+          file_size: number
+          id?: string
+          storage_path: string
+          user_id: string
+        }
+        Update: {
+          campaign_id?: string | null
+          content_type?: string
+          created_at?: string
+          file_name?: string
+          file_size?: number
+          id?: string
+          storage_path?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_attachments_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaign_recipients: {
         Row: {
           campaign_id: string
