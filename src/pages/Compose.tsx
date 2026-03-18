@@ -277,17 +277,34 @@ export default function Compose() {
                     {toField.split(/[,;\n]+/).filter((e) => e.trim().includes("@")).length} recipient(s)
                   </p>
                 </div>
-                <CsvImport
-                  onImport={(recipients) => {
-                    const newEmails = recipients.map((r) =>
-                      r.name ? `${r.name} <${r.email}>` : r.email
-                    );
-                    setToField((prev) => {
-                      const existing = prev.trim();
-                      return existing ? `${existing}\n${newEmails.join("\n")}` : newEmails.join("\n");
-                    });
-                  }}
-                />
+                <div className="flex items-center gap-2">
+                  <CsvImport
+                    onImport={(recipients) => {
+                      const newEmails = recipients.map((r) =>
+                        r.name ? `${r.name} <${r.email}>` : r.email
+                      );
+                      setToField((prev) => {
+                        const existing = prev.trim();
+                        return existing ? `${existing}\n${newEmails.join("\n")}` : newEmails.join("\n");
+                      });
+                    }}
+                  />
+                  {contactLists && contactLists.length > 0 && (
+                    <Select onValueChange={loadContactList}>
+                      <SelectTrigger className="w-auto h-8 text-xs gap-1.5">
+                        <Users className="h-3 w-3" />
+                        <SelectValue placeholder="Load list…" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {contactLists.map((l) => (
+                          <SelectItem key={l.id} value={l.id}>
+                            {l.name} ({l.contact_count})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
