@@ -51,6 +51,63 @@ export default function Compose() {
   const [abTestEnabled, setAbTestEnabled] = useState(false);
   const [abVariants, setAbVariants] = useState<AbVariant[]>([]);
 
+  // Attachments state
+  const [attachments, setAttachments] = useState<{ file: File; uploading: boolean; storagePath?: string; error?: string }[]>([]);
+  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+
+  const handleAttachFiles = async (files: FileList | null) => {
+    if (!files || !user) return;
+    const newFiles = Array.from(files);
+    const toAdd = newFiles
+      .filter((f) => {
+        if (f.size > MAX_FILE_SIZE) {
+          toast.error(`${f.name} exceeds 5 MB limit`);
+          return false;
+        }
+        if (attachments.some((a) => a.file.name === f.name && a.file.size === f.size)) {
+          toast.error(`${f.name} already attached`);
+          return false;
+        }
+        return true;
+      })
+      .map((f) => ({ file: f, uploading: true }));
+
+    if (toAdd.length === 0) return;
+    setAttachments((prev) => [...prev, ...toAdd]);
+
+    for (const item of toAdd) {
+      const path = `${user.id}/${crypto.randomUUID()}_${item.file.name}`;
+      const { error } = await supabase.storage
+        .from("campaign-attachments")
+        .upload(path, item.file, { contentType: item.file.type });
+
+      setAttachments((prev) =>
+        prev.map((a) =>
+          a.file === item.file
+            ? error
+              ? { ...a, uploading: false, error: error.message }
+              : { ...a, uploading: false, storagePath: path }
+            : a
+        )
+      );
+      if (error) toast.error(`Failed to upload ${item.file.name}`);
+    }
+  };
+
+  const removeAttachment = async (idx: number) => {
+    const att = attachments[idx];
+    if (att.storagePath) {
+      await supabase.storage.from("campaign-attachments").remove([att.storagePath]);
+    }
+    setAttachments((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
   const { data: domains } = useQuery({
     queryKey: ["sending-domains"],
     queryFn: async () => {
