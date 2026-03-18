@@ -748,6 +748,78 @@ export default function SettingsPage() {
               )}
             </div>
           </TabsContent>
+
+          {/* Webhooks */}
+          <TabsContent value="webhooks" className="mt-6">
+            <div className="space-y-4 max-w-3xl">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Receive real-time HTTP POST notifications when email events occur.</p>
+                </div>
+                <Button className="gap-2" onClick={() => { resetWebhookForm(); setShowWebhookDialog(true); }}>
+                  <Plus className="h-4 w-4" /> Add Webhook
+                </Button>
+              </div>
+
+              {webhooksLoading ? (
+                <div className="flex items-center justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+              ) : webhooks && webhooks.length > 0 ? (
+                <div className="space-y-3">
+                  {webhooks.map((w) => (
+                    <div key={w.id} className="bg-card border border-border rounded-lg p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className={cn("w-2 h-2 rounded-full", w.is_active ? "bg-emerald-500" : "bg-muted-foreground/40")} />
+                          <div>
+                            <p className="text-sm font-medium">{w.name}</p>
+                            <p className="text-xs text-muted-foreground font-mono mt-0.5 truncate max-w-md">{w.url}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {w.failure_count > 0 && (
+                            <span className="text-xs text-destructive flex items-center gap-1">
+                              <AlertTriangle className="h-3 w-3" /> {w.failure_count} failures
+                            </span>
+                          )}
+                          <Switch
+                            checked={w.is_active}
+                            onCheckedChange={(v) => toggleWebhookMutation.mutate({ id: w.id, is_active: v })}
+                          />
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditWebhook(w)}>
+                            <Pencil className="h-3 w-3" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteWebhookId(w.id)}>
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {w.events.map((ev) => (
+                          <span key={ev} className="text-xs bg-secondary text-muted-foreground px-2 py-0.5 rounded">{ev}</span>
+                        ))}
+                      </div>
+                      {w.last_triggered_at && (
+                        <p className="text-xs text-muted-foreground">
+                          Last triggered {formatDistanceToNow(new Date(w.last_triggered_at), { addSuffix: true })}
+                          {w.last_status_code && (
+                            <span className={cn("ml-2", w.last_status_code < 300 ? "text-emerald-500" : "text-destructive")}>
+                              HTTP {w.last_status_code}
+                            </span>
+                          )}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-card border border-border rounded-lg flex flex-col items-center justify-center py-16 text-center">
+                  <div className="p-3 rounded-xl bg-muted mb-3"><Webhook className="h-6 w-6 text-muted-foreground" /></div>
+                  <p className="text-sm font-medium">No webhooks configured</p>
+                  <p className="text-xs text-muted-foreground mt-1">Add a webhook to receive real-time event notifications via HTTP.</p>
+                </div>
+              )}
+            </div>
+          </TabsContent>
         </Tabs>
       </div>
 
