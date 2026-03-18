@@ -3,6 +3,8 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Dashboard from "./pages/Dashboard";
 import Compose from "./pages/Compose";
 import Campaigns from "./pages/Campaigns";
@@ -24,20 +26,22 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/compose" element={<Compose />} />
-          <Route path="/campaigns" element={<Campaigns />} />
-          <Route path="/queue" element={<Queue />} />
-          <Route path="/logs" element={<Logs />} />
-          <Route path="/bounces" element={<Bounces />} />
-          <Route path="/suppression" element={<Suppression />} />
-          <Route path="/dns" element={<DnsHealth />} />
-          <Route path="/analytics" element={<Analytics />} />
-          <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AuthProvider>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/compose" element={<ProtectedRoute><Compose /></ProtectedRoute>} />
+            <Route path="/campaigns" element={<ProtectedRoute><Campaigns /></ProtectedRoute>} />
+            <Route path="/queue" element={<ProtectedRoute><Queue /></ProtectedRoute>} />
+            <Route path="/logs" element={<ProtectedRoute><Logs /></ProtectedRoute>} />
+            <Route path="/bounces" element={<ProtectedRoute><Bounces /></ProtectedRoute>} />
+            <Route path="/suppression" element={<ProtectedRoute><Suppression /></ProtectedRoute>} />
+            <Route path="/dns" element={<ProtectedRoute><DnsHealth /></ProtectedRoute>} />
+            <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
