@@ -17,6 +17,7 @@ const navItems = [
   { title: "Campaigns", url: "/campaigns", icon: Megaphone },
   { title: "Campaign Analytics", url: "/campaign-analytics", icon: TrendingUp },
   { title: "Templates", url: "/templates", icon: LayoutTemplate },
+  { title: "Contact Lists", url: "/contact-lists", icon: Users },
   { title: "Queue", url: "/queue", icon: ListOrdered },
   { title: "Logs", url: "/logs", icon: ScrollText },
   { title: "Bounces", url: "/bounces", icon: AlertTriangle },
