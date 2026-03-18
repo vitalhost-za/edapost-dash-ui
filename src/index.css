@@ -100,6 +100,9 @@
   html {
     @apply dark;
   }
+  html:not(.dark) body {
+    @apply bg-background text-foreground;
+  }
   body {
     @apply bg-background text-foreground font-sans antialiased;
   }
