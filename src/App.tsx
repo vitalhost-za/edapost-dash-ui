@@ -38,6 +38,7 @@ const App = () => (
             <Route path="/servers" element={<ProtectedRoute><Servers /></ProtectedRoute>} />
             <Route path="/compose" element={<ProtectedRoute><Compose /></ProtectedRoute>} />
             <Route path="/campaigns" element={<ProtectedRoute><Campaigns /></ProtectedRoute>} />
+            <Route path="/templates" element={<ProtectedRoute><Templates /></ProtectedRoute>} />
             <Route path="/queue" element={<ProtectedRoute><Queue /></ProtectedRoute>} />
             <Route path="/logs" element={<ProtectedRoute><Logs /></ProtectedRoute>} />
             <Route path="/bounces" element={<ProtectedRoute><Bounces /></ProtectedRoute>} />
