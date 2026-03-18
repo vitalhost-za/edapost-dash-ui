@@ -840,6 +840,9 @@ export default function SettingsPage() {
                           )}
                         </p>
                       )}
+                      <a href={`/webhook-deliveries?webhook=${w.id}`} className="text-xs text-primary hover:underline inline-flex items-center gap-1 mt-1">
+                        View delivery log →
+                      </a>
                     </div>
                   ))}
                 </div>
