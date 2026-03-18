@@ -19,6 +19,7 @@ import Servers from "./pages/Servers";
 import Login from "./pages/Login";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
+import WebhookDeliveries from "./pages/WebhookDeliveries";
 
 const queryClient = new QueryClient();
 
