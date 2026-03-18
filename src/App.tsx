@@ -44,6 +44,7 @@ const App = () => (
             <Route path="/dns" element={<ProtectedRoute><DnsHealth /></ProtectedRoute>} />
             <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+            <Route path="/webhook-deliveries" element={<ProtectedRoute><WebhookDeliveries /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
