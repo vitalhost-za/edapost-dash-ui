@@ -215,6 +215,16 @@ async function dispatchWebhooks(
       }
 
       const durationMs = Date.now() - startTime;
+      const deliveryId = crypto.randomUUID();
+
+      // Calculate next retry with exponential backoff if failed
+      // Backoff: 10s, 30s, 90s, 270s, 810s (base 10s * 3^attempt)
+      const currentAttempt = failureCount + 1;
+      let nextRetryAt: string | null = null;
+      if (!success && currentAttempt < 5) {
+        const backoffSeconds = 10 * Math.pow(3, currentAttempt - 1);
+        nextRetryAt = new Date(Date.now() + backoffSeconds * 1000).toISOString();
+      }
 
       // Log the delivery attempt
       await supabase.from("webhook_deliveries").insert({
@@ -227,7 +237,10 @@ async function dispatchWebhooks(
         duration_ms: durationMs,
         success,
         error_message: errorMessage,
-        attempt_number: success ? 1 : failureCount + 1,
+        attempt_number: currentAttempt,
+        delivery_id: deliveryId,
+        max_attempts: 5,
+        next_retry_at: nextRetryAt,
       });
     })
   );

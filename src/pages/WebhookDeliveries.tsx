@@ -26,6 +26,9 @@ interface Delivery {
   success: boolean;
   error_message: string | null;
   attempt_number: number;
+  max_attempts: number;
+  next_retry_at: string | null;
+  delivery_id: string;
   created_at: string;
 }
 
@@ -229,7 +232,15 @@ export default function WebhookDeliveries() {
                         <td className="p-3 text-xs text-muted-foreground">
                           {d.duration_ms !== null ? `${d.duration_ms}ms` : "—"}
                         </td>
-                        <td className="p-3 text-xs text-muted-foreground">#{d.attempt_number}</td>
+                        <td className="p-3 text-xs text-muted-foreground">
+                          #{d.attempt_number}/{d.max_attempts}
+                          {d.next_retry_at && !d.success && (
+                            <span className="ml-1 text-warning" title={`Retry at ${format(new Date(d.next_retry_at), "PPpp")}`}>⏳</span>
+                          )}
+                          {!d.success && d.attempt_number >= d.max_attempts && (
+                            <span className="ml-1 text-destructive" title="Max retries exhausted">✗</span>
+                          )}
+                        </td>
                         <td className="p-3 text-xs text-muted-foreground">
                           {formatDistanceToNow(new Date(d.created_at), { addSuffix: true })}
                         </td>
@@ -302,9 +313,27 @@ export default function WebhookDeliveries() {
                 </div>
                 <div className="bg-secondary rounded-md p-3">
                   <p className="text-xs text-muted-foreground">Attempt</p>
-                  <p className="text-sm font-medium mt-0.5">#{selectedDelivery.attempt_number}</p>
+                  <p className="text-sm font-medium mt-0.5">#{selectedDelivery.attempt_number} of {selectedDelivery.max_attempts}</p>
                 </div>
               </div>
+
+              {/* Retry status */}
+              {!selectedDelivery.success && selectedDelivery.next_retry_at && (
+                <div className="bg-warning/10 border border-warning/20 rounded-md p-3">
+                  <p className="text-xs font-medium text-warning">Retry Scheduled</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Next retry at {format(new Date(selectedDelivery.next_retry_at), "PPpp")}
+                  </p>
+                </div>
+              )}
+              {!selectedDelivery.success && selectedDelivery.attempt_number >= selectedDelivery.max_attempts && (
+                <div className="bg-destructive/10 border border-destructive/20 rounded-md p-3">
+                  <p className="text-xs font-medium text-destructive">Max Retries Exhausted</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    This delivery failed after {selectedDelivery.max_attempts} attempts and will not be retried.
+                  </p>
+                </div>
+              )}
 
               {/* Error */}
               {selectedDelivery.error_message && (

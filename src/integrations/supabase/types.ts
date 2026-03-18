@@ -698,10 +698,13 @@ export type Database = {
         Row: {
           attempt_number: number
           created_at: string
+          delivery_id: string | null
           duration_ms: number | null
           error_message: string | null
           event_type: string
           id: string
+          max_attempts: number
+          next_retry_at: string | null
           payload: Json
           response_body: string | null
           status_code: number | null
@@ -712,10 +715,13 @@ export type Database = {
         Insert: {
           attempt_number?: number
           created_at?: string
+          delivery_id?: string | null
           duration_ms?: number | null
           error_message?: string | null
           event_type: string
           id?: string
+          max_attempts?: number
+          next_retry_at?: string | null
           payload?: Json
           response_body?: string | null
           status_code?: number | null
@@ -726,10 +732,13 @@ export type Database = {
         Update: {
           attempt_number?: number
           created_at?: string
+          delivery_id?: string | null
           duration_ms?: number | null
           error_message?: string | null
           event_type?: string
           id?: string
+          max_attempts?: number
+          next_retry_at?: string | null
           payload?: Json
           response_body?: string | null
           status_code?: number | null
