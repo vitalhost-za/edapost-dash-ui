@@ -1,51 +1,86 @@
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { StatusBadge } from "@/components/StatusBadge";
-import { Mail, TrendingUp, CheckCircle, AlertTriangle, XCircle, ListOrdered, ArrowUp, ArrowDown } from "lucide-react";
+import {
+  Mail, TrendingUp, AlertTriangle, XCircle, ListOrdered,
+  ArrowUp, ArrowDown, Server, Globe, Loader2,
+} from "lucide-react";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell,
 } from "recharts";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
+import {
+  useSmtpServers,
+  useSendingDomains,
+  useIpWarmup,
+  useDeliveryStats,
+  useDeliveryTotals,
+} from "@/hooks/use-dashboard-data";
+import { format } from "date-fns";
 
-const lineData = Array.from({ length: 30 }, (_, i) => ({
-  day: `${i + 1}`,
-  sent: Math.floor(Math.random() * 3000 + 2500),
-}));
-
-const donutData = [
-  { name: "Delivered", value: 8542, color: "hsl(142, 71%, 45%)" },
-  { name: "Bounced", value: 234, color: "hsl(0, 72%, 51%)" },
-  { name: "Deferred", value: 128, color: "hsl(25, 95%, 53%)" },
-  { name: "Failed", value: 45, color: "hsl(0, 62%, 40%)" },
-];
-
-const metrics = [
-  { title: "Emails Sent Today", value: "8,949", change: "+12.5%", changeType: "positive" as const, icon: Mail },
-  { title: "Delivery Rate", value: "95.4%", change: "+0.8%", changeType: "positive" as const, icon: TrendingUp },
-  { title: "Bounce Rate", value: "2.6%", change: "-0.3%", changeType: "negative" as const, icon: AlertTriangle },
-  { title: "Complaint Rate", value: "0.02%", change: "-0.01%", changeType: "negative" as const, icon: XCircle },
-  { title: "Queue Depth", value: "342", change: null, changeType: "neutral" as const, icon: ListOrdered },
-];
-
-const recentActivity = [
-  { type: "sent" as const, email: "user@gmail.com", subject: "Welcome aboard!", time: "2 min ago" },
-  { type: "bounced" as const, email: "bad@invalid.com", subject: "Newsletter #45", time: "5 min ago" },
-  { type: "sent" as const, email: "client@company.co", subject: "Invoice #1234", time: "8 min ago" },
-  { type: "complained" as const, email: "person@yahoo.com", subject: "Promo offer", time: "12 min ago" },
-  { type: "sent" as const, email: "dev@startup.io", subject: "API key reset", time: "15 min ago" },
-  { type: "sent" as const, email: "team@corp.com", subject: "Weekly digest", time: "20 min ago" },
-  { type: "bounced" as const, email: "old@expired.net", subject: "Re-engagement", time: "25 min ago" },
-  { type: "sent" as const, email: "admin@site.org", subject: "Security alert", time: "30 min ago" },
-  { type: "sent" as const, email: "hello@brand.com", subject: "Order confirmation", time: "35 min ago" },
-  { type: "sent" as const, email: "support@help.io", subject: "Ticket update", time: "40 min ago" },
-];
+function EmptyState({ icon: Icon, title, description }: { icon: React.ElementType; title: string; description: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-12 text-center">
+      <div className="p-3 rounded-xl bg-muted mb-3">
+        <Icon className="h-6 w-6 text-muted-foreground" />
+      </div>
+      <p className="text-sm font-medium text-foreground">{title}</p>
+      <p className="text-xs text-muted-foreground mt-1 max-w-[240px]">{description}</p>
+    </div>
+  );
+}
 
 export default function Dashboard() {
+  const { data: servers, isLoading: serversLoading } = useSmtpServers();
+  const { data: domains, isLoading: domainsLoading } = useSendingDomains();
+  const { data: warmups, isLoading: warmupsLoading } = useIpWarmup();
+  const { data: chartData, isLoading: chartLoading } = useDeliveryStats(30);
+  const { data: todayTotals, isLoading: totalsLoading } = useDeliveryTotals(1);
+
+  const totalQueueSize = servers?.reduce((sum, s) => sum + s.queue_size, 0) ?? 0;
+  const onlineServers = servers?.filter((s) => s.status === "online").length ?? 0;
+  const totalServers = servers?.length ?? 0;
+
+  const sent = todayTotals?.sent ?? 0;
+  const delivered = todayTotals?.delivered ?? 0;
+  const bounced = todayTotals?.bounced ?? 0;
+  const complaints = todayTotals?.complaints ?? 0;
+  const deliveryRate = sent > 0 ? ((delivered / sent) * 100).toFixed(1) : "0.0";
+  const bounceRate = sent > 0 ? ((bounced / sent) * 100).toFixed(1) : "0.0";
+  const complaintRate = sent > 0 ? ((complaints / sent) * 100).toFixed(2) : "0.00";
+
+  const donutData = [
+    { name: "Delivered", value: todayTotals?.delivered ?? 0, color: "hsl(142, 71%, 45%)" },
+    { name: "Bounced", value: todayTotals?.bounced ?? 0, color: "hsl(0, 72%, 51%)" },
+    { name: "Deferred", value: todayTotals?.deferred ?? 0, color: "hsl(25, 95%, 53%)" },
+    { name: "Failed", value: todayTotals?.failed ?? 0, color: "hsl(0, 62%, 40%)" },
+  ];
+
+  const hasDonutData = donutData.some((d) => d.value > 0);
+
+  const formattedChartData = (chartData ?? []).map((d) => ({
+    ...d,
+    label: format(new Date(d.hour), "MMM d HH:mm"),
+  }));
+
+  const metrics = [
+    { title: "Emails Sent Today", value: sent.toLocaleString(), icon: Mail },
+    { title: "Delivery Rate", value: `${deliveryRate}%`, icon: TrendingUp },
+    { title: "Bounce Rate", value: `${bounceRate}%`, icon: AlertTriangle },
+    { title: "Complaint Rate", value: `${complaintRate}%`, icon: XCircle },
+    { title: "Queue Depth", value: totalQueueSize.toLocaleString(), icon: ListOrdered },
+  ];
+
+  const isLoading = serversLoading || domainsLoading || warmupsLoading || chartLoading || totalsLoading;
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+          {isLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+        </div>
 
         {/* Metric Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -58,18 +93,6 @@ export default function Dashboard() {
                 </div>
               </div>
               <p className="text-2xl font-bold tracking-tight mt-2">{m.value}</p>
-              {m.change && (
-                <div className={cn(
-                  "flex items-center gap-1 mt-1 text-xs font-medium",
-                  m.changeType === "positive" && m.title !== "Bounce Rate" && m.title !== "Complaint Rate" ? "text-success" : "",
-                  m.changeType === "negative" && (m.title === "Bounce Rate" || m.title === "Complaint Rate") ? "text-success" : "",
-                  m.changeType === "positive" && (m.title === "Bounce Rate" || m.title === "Complaint Rate") ? "text-destructive" : "",
-                  m.changeType === "negative" && m.title !== "Bounce Rate" && m.title !== "Complaint Rate" ? "text-destructive" : "",
-                )}>
-                  {m.change.startsWith("+") ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
-                  {m.change}
-                </div>
-              )}
             </div>
           ))}
         </div>
@@ -78,90 +101,151 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <div className="lg:col-span-2 bg-card border border-border rounded-lg p-5">
             <h3 className="text-sm font-medium text-foreground mb-4">Emails Sent — Last 30 Days</h3>
-            <ResponsiveContainer width="100%" height={280}>
-              <LineChart data={lineData}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                <XAxis dataKey="day" tick={{ fontSize: 11, className: "fill-muted-foreground" }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, className: "fill-muted-foreground" }} axisLine={false} tickLine={false} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "hsl(var(--card))",
-                    border: "1px solid hsl(var(--border))",
-                    borderRadius: 8,
-                    fontSize: 12,
-                    color: "hsl(var(--foreground))",
-                  }}
-                  labelStyle={{ color: "hsl(var(--foreground))" }}
-                />
-                <Line type="monotone" dataKey="sent" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
-              </LineChart>
-            </ResponsiveContainer>
+            {formattedChartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={280}>
+                <LineChart data={formattedChartData}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                  <XAxis dataKey="label" tick={{ fontSize: 11, className: "fill-muted-foreground" }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 11, className: "fill-muted-foreground" }} axisLine={false} tickLine={false} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "hsl(var(--card))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: 8,
+                      fontSize: 12,
+                      color: "hsl(var(--foreground))",
+                    }}
+                    labelStyle={{ color: "hsl(var(--foreground))" }}
+                  />
+                  <Line type="monotone" dataKey="sent" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} name="Sent" />
+                  <Line type="monotone" dataKey="delivered" stroke="hsl(var(--success))" strokeWidth={2} dot={false} name="Delivered" />
+                  <Line type="monotone" dataKey="bounced" stroke="hsl(var(--destructive))" strokeWidth={1.5} dot={false} name="Bounced" />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <EmptyState icon={Mail} title="No delivery data yet" description="Stats will appear here once your SMTP servers start sending emails." />
+            )}
           </div>
 
           <div className="bg-card border border-border rounded-lg p-5">
             <h3 className="text-sm font-medium text-foreground mb-4">Delivery Breakdown</h3>
-            <ResponsiveContainer width="100%" height={180}>
-              <PieChart>
-                <Pie data={donutData} innerRadius={55} outerRadius={80} dataKey="value" paddingAngle={3} strokeWidth={0}>
-                  {donutData.map((entry, i) => (
-                    <Cell key={i} fill={entry.color} />
+            {hasDonutData ? (
+              <>
+                <ResponsiveContainer width="100%" height={180}>
+                  <PieChart>
+                    <Pie data={donutData} innerRadius={55} outerRadius={80} dataKey="value" paddingAngle={3} strokeWidth={0}>
+                      {donutData.map((entry, i) => (
+                        <Cell key={i} fill={entry.color} />
+                      ))}
+                    </Pie>
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-2">
+                  {donutData.map((d) => (
+                    <div key={d.name} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: d.color }} />
+                        <span className="text-xs text-muted-foreground">{d.name}</span>
+                      </div>
+                      <span className="text-xs font-semibold text-foreground">{d.value.toLocaleString()}</span>
+                    </div>
                   ))}
-                </Pie>
-              </PieChart>
-            </ResponsiveContainer>
-            {/* Custom inline legend */}
-            <div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-2">
-              {donutData.map((d) => (
-                <div key={d.name} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: d.color }} />
-                    <span className="text-xs text-muted-foreground">{d.name}</span>
-                  </div>
-                  <span className="text-xs font-semibold text-foreground">{d.value.toLocaleString()}</span>
                 </div>
-              ))}
-            </div>
+              </>
+            ) : (
+              <EmptyState icon={TrendingUp} title="No data yet" description="Delivery breakdown will populate as emails are processed." />
+            )}
           </div>
         </div>
 
-        {/* Activity + Warmup */}
+        {/* Servers + Domains + Warmup */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-2 bg-card border border-border rounded-lg p-5">
-            <h3 className="text-sm font-medium text-foreground mb-4">Recent Activity</h3>
-            <div className="space-y-1">
-              {recentActivity.map((event, i) => (
-                <div key={i} className="flex items-center gap-4 py-2 border-b border-border last:border-0">
-                  <StatusBadge status={event.type} />
-                  <span className="text-sm text-foreground min-w-0 truncate flex-shrink-0 w-40">{event.email}</span>
-                  <span className="text-sm text-muted-foreground min-w-0 truncate flex-1">{event.subject}</span>
-                  <span className="text-xs text-muted-foreground whitespace-nowrap">{event.time}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
+          {/* Server Status */}
           <div className="bg-card border border-border rounded-lg p-5">
-            <h3 className="text-sm font-medium text-foreground mb-4">IP Warmup Progress</h3>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Day 12 of 30</span>
-                <span className="font-medium text-primary">40%</span>
-              </div>
-              <Progress value={40} className="h-2" />
-              <div className="space-y-3 mt-2">
-                {[
-                  { label: "Daily Limit", value: "5,000" },
-                  { label: "Sent Today", value: "3,847" },
-                  { label: "Remaining", value: "1,153" },
-                  { label: "IP Address", value: "198.51.100.42", mono: true },
-                ].map((row) => (
-                  <div key={row.label} className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">{row.label}</span>
-                    <span className={cn("text-sm font-semibold", row.mono && "font-mono")}>{row.value}</span>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-medium text-foreground">SMTP Servers</h3>
+              <span className="text-xs text-muted-foreground">{onlineServers}/{totalServers} online</span>
+            </div>
+            {servers && servers.length > 0 ? (
+              <div className="space-y-3">
+                {servers.slice(0, 5).map((server) => (
+                  <div key={server.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{server.hostname}</p>
+                      <p className="text-xs text-muted-foreground font-mono">{server.ip_address}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">Q: {server.queue_size}</span>
+                      <StatusBadge status={server.status === "online" ? "sent" : server.status === "degraded" ? "warning" : "failed"} label={server.status} />
+                    </div>
                   </div>
                 ))}
               </div>
-            </div>
+            ) : (
+              <EmptyState icon={Server} title="No servers added" description="Add your first Postfix SMTP server to get started." />
+            )}
+          </div>
+
+          {/* Sending Domains */}
+          <div className="bg-card border border-border rounded-lg p-5">
+            <h3 className="text-sm font-medium text-foreground mb-4">Sending Domains</h3>
+            {domains && domains.length > 0 ? (
+              <div className="space-y-3">
+                {domains.slice(0, 5).map((domain) => (
+                  <div key={domain.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
+                    <p className="text-sm font-medium text-foreground">{domain.domain}</p>
+                    <div className="flex items-center gap-1">
+                      {(["spf", "dkim", "dmarc"] as const).map((check) => {
+                        const status = domain[`${check}_status` as keyof typeof domain] as string;
+                        return (
+                          <span
+                            key={check}
+                            className={cn(
+                              "text-[10px] font-bold uppercase px-1.5 py-0.5 rounded",
+                              status === "valid" && "bg-success/15 text-success",
+                              status === "invalid" && "bg-destructive/15 text-destructive",
+                              status === "missing" && "bg-warning/15 text-warning",
+                              status === "unchecked" && "bg-muted text-muted-foreground"
+                            )}
+                          >
+                            {check}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <EmptyState icon={Globe} title="No domains configured" description="Add a sending domain to verify DNS records." />
+            )}
+          </div>
+
+          {/* IP Warmup */}
+          <div className="bg-card border border-border rounded-lg p-5">
+            <h3 className="text-sm font-medium text-foreground mb-4">IP Warmup Progress</h3>
+            {warmups && warmups.length > 0 ? (
+              <div className="space-y-5">
+                {warmups.slice(0, 3).map((w) => {
+                  const progress = Math.round((w.warmup_day / w.total_days) * 100);
+                  return (
+                    <div key={w.id} className="space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground font-mono text-xs">{w.ip_address}</span>
+                        <span className="font-medium text-primary">{progress}%</span>
+                      </div>
+                      <Progress value={progress} className="h-2" />
+                      <div className="flex justify-between text-xs text-muted-foreground">
+                        <span>Day {w.warmup_day}/{w.total_days}</span>
+                        <span>{w.sent_today.toLocaleString()}/{w.daily_limit.toLocaleString()}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <EmptyState icon={TrendingUp} title="No active warmups" description="Start an IP warmup schedule to gradually build sender reputation." />
+            )}
           </div>
         </div>
       </div>

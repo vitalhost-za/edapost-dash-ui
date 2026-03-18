@@ -14,6 +14,109 @@ export type Database = {
   }
   public: {
     Tables: {
+      delivery_stats: {
+        Row: {
+          bounced: number
+          complaints: number
+          created_at: string
+          deferred: number
+          delivered: number
+          failed: number
+          hour: string
+          id: string
+          sent: number
+          smtp_server_id: string | null
+          user_id: string
+        }
+        Insert: {
+          bounced?: number
+          complaints?: number
+          created_at?: string
+          deferred?: number
+          delivered?: number
+          failed?: number
+          hour: string
+          id?: string
+          sent?: number
+          smtp_server_id?: string | null
+          user_id: string
+        }
+        Update: {
+          bounced?: number
+          complaints?: number
+          created_at?: string
+          deferred?: number
+          delivered?: number
+          failed?: number
+          hour?: string
+          id?: string
+          sent?: number
+          smtp_server_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivery_stats_smtp_server_id_fkey"
+            columns: ["smtp_server_id"]
+            isOneToOne: false
+            referencedRelation: "smtp_servers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ip_warmup: {
+        Row: {
+          created_at: string
+          daily_limit: number
+          id: string
+          ip_address: unknown
+          sent_today: number
+          smtp_server_id: string
+          started_at: string
+          status: string
+          total_days: number
+          updated_at: string
+          user_id: string
+          warmup_day: number
+        }
+        Insert: {
+          created_at?: string
+          daily_limit?: number
+          id?: string
+          ip_address: unknown
+          sent_today?: number
+          smtp_server_id: string
+          started_at?: string
+          status?: string
+          total_days?: number
+          updated_at?: string
+          user_id: string
+          warmup_day?: number
+        }
+        Update: {
+          created_at?: string
+          daily_limit?: number
+          id?: string
+          ip_address?: unknown
+          sent_today?: number
+          smtp_server_id?: string
+          started_at?: string
+          status?: string
+          total_days?: number
+          updated_at?: string
+          user_id?: string
+          warmup_day?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ip_warmup_smtp_server_id_fkey"
+            columns: ["smtp_server_id"]
+            isOneToOne: false
+            referencedRelation: "smtp_servers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -36,6 +139,113 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      sending_domains: {
+        Row: {
+          created_at: string
+          dkim_selector: string | null
+          dkim_status: string
+          dmarc_status: string
+          domain: string
+          id: string
+          mx_status: string
+          ptr_status: string
+          smtp_server_id: string | null
+          spf_status: string
+          updated_at: string
+          user_id: string
+          verified: boolean
+        }
+        Insert: {
+          created_at?: string
+          dkim_selector?: string | null
+          dkim_status?: string
+          dmarc_status?: string
+          domain: string
+          id?: string
+          mx_status?: string
+          ptr_status?: string
+          smtp_server_id?: string | null
+          spf_status?: string
+          updated_at?: string
+          user_id: string
+          verified?: boolean
+        }
+        Update: {
+          created_at?: string
+          dkim_selector?: string | null
+          dkim_status?: string
+          dmarc_status?: string
+          domain?: string
+          id?: string
+          mx_status?: string
+          ptr_status?: string
+          smtp_server_id?: string | null
+          spf_status?: string
+          updated_at?: string
+          user_id?: string
+          verified?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sending_domains_smtp_server_id_fkey"
+            columns: ["smtp_server_id"]
+            isOneToOne: false
+            referencedRelation: "smtp_servers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      smtp_servers: {
+        Row: {
+          created_at: string
+          current_connections: number
+          hostname: string
+          id: string
+          ip_address: unknown
+          last_heartbeat: string | null
+          max_connections: number
+          port: number
+          postfix_version: string | null
+          queue_size: number
+          status: string
+          tls_enabled: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_connections?: number
+          hostname: string
+          id?: string
+          ip_address: unknown
+          last_heartbeat?: string | null
+          max_connections?: number
+          port?: number
+          postfix_version?: string | null
+          queue_size?: number
+          status?: string
+          tls_enabled?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_connections?: number
+          hostname?: string
+          id?: string
+          ip_address?: unknown
+          last_heartbeat?: string | null
+          max_connections?: number
+          port?: number
+          postfix_version?: string | null
+          queue_size?: number
+          status?: string
+          tls_enabled?: boolean
           updated_at?: string
           user_id?: string
         }
