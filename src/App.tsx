@@ -22,6 +22,7 @@ import NotFound from "./pages/NotFound";
 import WebhookDeliveries from "./pages/WebhookDeliveries";
 import Templates from "./pages/Templates";
 import CampaignAnalytics from "./pages/CampaignAnalytics";
+import ContactLists from "./pages/ContactLists";
 
 const queryClient = new QueryClient();
 
