@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.verify-dns]
 verify_jwt = false
+
+[functions.send-test-email]
+verify_jwt = false
