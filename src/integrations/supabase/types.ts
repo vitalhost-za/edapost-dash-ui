@@ -147,11 +147,16 @@ export type Database = {
           from_address: string
           html_body: string | null
           id: string
+          last_recurrence_at: string | null
           name: string
           open_tracking: boolean
           opened_count: number
+          parent_campaign_id: string | null
           plain_body: string | null
           recipient_count: number
+          recurrence_count: number | null
+          recurrence_end_at: string | null
+          recurrence_pattern: string | null
           reply_to: string | null
           scheduled_at: string | null
           sending_domain_id: string | null
@@ -160,6 +165,7 @@ export type Database = {
           smtp_server_id: string | null
           status: string
           subject: string
+          timezone: string
           updated_at: string
           user_id: string
         }
@@ -174,11 +180,16 @@ export type Database = {
           from_address: string
           html_body?: string | null
           id?: string
+          last_recurrence_at?: string | null
           name: string
           open_tracking?: boolean
           opened_count?: number
+          parent_campaign_id?: string | null
           plain_body?: string | null
           recipient_count?: number
+          recurrence_count?: number | null
+          recurrence_end_at?: string | null
+          recurrence_pattern?: string | null
           reply_to?: string | null
           scheduled_at?: string | null
           sending_domain_id?: string | null
@@ -187,6 +198,7 @@ export type Database = {
           smtp_server_id?: string | null
           status?: string
           subject: string
+          timezone?: string
           updated_at?: string
           user_id: string
         }
@@ -201,11 +213,16 @@ export type Database = {
           from_address?: string
           html_body?: string | null
           id?: string
+          last_recurrence_at?: string | null
           name?: string
           open_tracking?: boolean
           opened_count?: number
+          parent_campaign_id?: string | null
           plain_body?: string | null
           recipient_count?: number
+          recurrence_count?: number | null
+          recurrence_end_at?: string | null
+          recurrence_pattern?: string | null
           reply_to?: string | null
           scheduled_at?: string | null
           sending_domain_id?: string | null
@@ -214,10 +231,18 @@ export type Database = {
           smtp_server_id?: string | null
           status?: string
           subject?: string
+          timezone?: string
           updated_at?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "campaigns_parent_campaign_id_fkey"
+            columns: ["parent_campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "campaigns_sending_domain_id_fkey"
             columns: ["sending_domain_id"]
