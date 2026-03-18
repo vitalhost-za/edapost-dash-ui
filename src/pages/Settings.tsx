@@ -20,7 +20,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Plus, Trash2, Copy, Loader2, Save, Key, Bell, Server, Settings2, Shield,
-  CheckCircle, User, Camera, Webhook, ExternalLink, AlertTriangle, Pencil,
+  CheckCircle, User, Camera, Webhook, ExternalLink, AlertTriangle, Pencil, Send,
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
@@ -357,6 +357,35 @@ export default function SettingsPage() {
       toast.success("Webhook deleted");
     },
     onError: (err: Error) => toast.error(err.message),
+  });
+
+  // Test webhook
+  const testWebhookMutation = useMutation({
+    mutationFn: async (webhookId: string) => {
+      const { data, error } = await supabase.functions.invoke("dispatch-webhooks", {
+        body: {
+          event_type: "email.test",
+          data: {
+            log_id: "test-" + crypto.randomUUID(),
+            message_id: "<test@edapost.local>",
+            from_address: "test@example.com",
+            to_address: "recipient@example.com",
+            subject: "Webhook Test Event",
+            event_type: "test",
+            response_code: "250",
+            smtp_response: "OK",
+            created_at: new Date().toISOString(),
+          },
+        },
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["webhooks"] });
+      toast.success("Test event dispatched");
+    },
+    onError: (err: Error) => toast.error("Test failed: " + err.message),
   });
 
   const resetWebhookForm = () => {
@@ -785,6 +814,9 @@ export default function SettingsPage() {
                             checked={w.is_active}
                             onCheckedChange={(v) => toggleWebhookMutation.mutate({ id: w.id, is_active: v })}
                           />
+                          <Button variant="ghost" size="icon" className="h-7 w-7" title="Send test event" onClick={() => testWebhookMutation.mutate(w.id)} disabled={testWebhookMutation.isPending}>
+                            <Send className="h-3 w-3" />
+                          </Button>
                           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditWebhook(w)}>
                             <Pencil className="h-3 w-3" />
                           </Button>
