@@ -232,7 +232,15 @@ export default function WebhookDeliveries() {
                         <td className="p-3 text-xs text-muted-foreground">
                           {d.duration_ms !== null ? `${d.duration_ms}ms` : "—"}
                         </td>
-                        <td className="p-3 text-xs text-muted-foreground">#{d.attempt_number}</td>
+                        <td className="p-3 text-xs text-muted-foreground">
+                          #{d.attempt_number}/{d.max_attempts}
+                          {d.next_retry_at && !d.success && (
+                            <span className="ml-1 text-warning" title={`Retry at ${format(new Date(d.next_retry_at), "PPpp")}`}>⏳</span>
+                          )}
+                          {!d.success && d.attempt_number >= d.max_attempts && (
+                            <span className="ml-1 text-destructive" title="Max retries exhausted">✗</span>
+                          )}
+                        </td>
                         <td className="p-3 text-xs text-muted-foreground">
                           {formatDistanceToNow(new Date(d.created_at), { addSuffix: true })}
                         </td>
