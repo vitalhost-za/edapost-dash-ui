@@ -173,7 +173,9 @@ export default function Compose() {
           user_id: user!.id,
           from_address: fromAddress.trim(),
           to_address: r.email,
-          subject: subject.trim(),
+          subject: replaceMergeTags(subject.trim(), r),
+          html_body: replaceMergeTags(htmlBody, r),
+          plain_body: plainBody ? replaceMergeTags(plainBody, r) : null,
           smtp_server_id: serverId || null,
         }));
         if (queueRows.length > 0) {
