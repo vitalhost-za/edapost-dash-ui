@@ -528,11 +528,33 @@ export default function Compose() {
                 </div>
               </div>
 
+              {/* Recipient preview selector */}
+              {parsedRecipients.length > 0 && (
+                <div className="mb-3 p-2.5 bg-primary/5 border border-primary/10 rounded-md">
+                  <p className="text-[10px] font-medium text-muted-foreground mb-1.5">Preview as recipient</p>
+                  <Select
+                    value={String(previewRecipientIdx)}
+                    onValueChange={(v) => setPreviewRecipientIdx(Number(v))}
+                  >
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {parsedRecipients.map((r, i) => (
+                        <SelectItem key={i} value={String(i)}>
+                          {r.name ? `${r.name} (${r.email})` : r.email}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
               {/* Subject preview */}
-              {subject && (
+              {previewSubject && (
                 <div className="mb-3 p-2.5 bg-secondary rounded-md">
                   <p className="text-xs text-muted-foreground">Subject</p>
-                  <p className="text-sm font-medium text-foreground mt-0.5">{subject}</p>
+                  <p className="text-sm font-medium text-foreground mt-0.5">{previewSubject}</p>
                 </div>
               )}
 
