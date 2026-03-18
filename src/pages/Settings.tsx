@@ -290,6 +290,99 @@ export default function SettingsPage() {
     onError: (err: Error) => toast.error(err.message),
   });
 
+  // Fetch webhooks
+  const { data: webhooks, isLoading: webhooksLoading } = useQuery({
+    queryKey: ["webhooks"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("webhooks")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data as WebhookEntry[];
+    },
+  });
+
+  // Create/update webhook
+  const saveWebhookMutation = useMutation({
+    mutationFn: async () => {
+      if (editingWebhook) {
+        const { error } = await supabase.from("webhooks").update({
+          name: webhookName.trim(),
+          url: webhookUrl.trim(),
+          secret: webhookSecret.trim() || null,
+          events: webhookEvents,
+        }).eq("id", editingWebhook.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("webhooks").insert({
+          user_id: user!.id,
+          name: webhookName.trim() || "Untitled Webhook",
+          url: webhookUrl.trim(),
+          secret: webhookSecret.trim() || null,
+          events: webhookEvents,
+        });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["webhooks"] });
+      resetWebhookForm();
+      toast.success(editingWebhook ? "Webhook updated" : "Webhook created");
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  // Toggle webhook active
+  const toggleWebhookMutation = useMutation({
+    mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
+      const { error } = await supabase.from("webhooks").update({ is_active }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["webhooks"] });
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  // Delete webhook
+  const deleteWebhookMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("webhooks").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["webhooks"] });
+      setDeleteWebhookId(null);
+      toast.success("Webhook deleted");
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const resetWebhookForm = () => {
+    setShowWebhookDialog(false);
+    setEditingWebhook(null);
+    setWebhookName("");
+    setWebhookUrl("");
+    setWebhookSecret("");
+    setWebhookEvents([]);
+  };
+
+  const openEditWebhook = (w: WebhookEntry) => {
+    setEditingWebhook(w);
+    setWebhookName(w.name);
+    setWebhookUrl(w.url);
+    setWebhookSecret(w.secret ?? "");
+    setWebhookEvents(w.events);
+    setShowWebhookDialog(true);
+  };
+
+  const toggleWebhookEvent = (event: string) => {
+    setWebhookEvents((prev) =>
+      prev.includes(event) ? prev.filter((e) => e !== event) : [...prev, event]
+    );
+  };
+
   const updateField = (key: string, value: unknown) => {
     setSettings((prev) => ({ ...prev, [key]: value }));
   };
