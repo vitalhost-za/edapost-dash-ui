@@ -345,56 +345,18 @@ export default function Campaigns() {
       <Dialog open={!!detailCampaign} onOpenChange={() => setDetailCampaign(null)}>
         <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{detailCampaign?.name}</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              {detailCampaign?.name}
+              {detailCampaign?.ab_test_enabled && (
+                <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded bg-primary/10 text-primary">
+                  <FlaskConical className="h-3 w-3" /> A/B Test
+                </span>
+              )}
+            </DialogTitle>
             <DialogDescription>{detailCampaign?.subject}</DialogDescription>
           </DialogHeader>
           {detailCampaign && (
-            <div className="space-y-4 mt-2">
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {[
-                  { label: "Recipients", value: detailCampaign.recipient_count },
-                  { label: "Sent", value: detailCampaign.sent_count },
-                  { label: "Delivered", value: detailCampaign.delivered_count },
-                  { label: "Bounced", value: detailCampaign.bounced_count },
-                ].map((s) => (
-                  <div key={s.label} className="bg-secondary rounded-md p-3 text-center">
-                    <p className="text-xs text-muted-foreground">{s.label}</p>
-                    <p className="text-lg font-bold">{s.value}</p>
-                  </div>
-                ))}
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-secondary rounded-md p-3 text-center">
-                  <p className="text-xs text-muted-foreground">Open Rate</p>
-                  <p className="text-lg font-bold">
-                    {detailCampaign.sent_count > 0
-                      ? ((detailCampaign.opened_count / detailCampaign.sent_count) * 100).toFixed(1)
-                      : "0.0"}%
-                  </p>
-                </div>
-                <div className="bg-secondary rounded-md p-3 text-center">
-                  <p className="text-xs text-muted-foreground">Click Rate</p>
-                  <p className="text-lg font-bold">
-                    {detailCampaign.sent_count > 0
-                      ? ((detailCampaign.clicked_count / detailCampaign.sent_count) * 100).toFixed(1)
-                      : "0.0"}%
-                  </p>
-                </div>
-              </div>
-              {detailCampaign.html_body && (
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground mb-2">Email Preview</p>
-                  <div className="bg-white rounded-md border border-border overflow-hidden">
-                    <iframe
-                      srcDoc={detailCampaign.html_body}
-                      className="w-full min-h-[300px] border-0"
-                      title="Campaign Preview"
-                      sandbox="allow-same-origin"
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
+            <CampaignDetailContent campaign={detailCampaign} />
           )}
         </DialogContent>
       </Dialog>
