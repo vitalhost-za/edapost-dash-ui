@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, PenSquare, Megaphone, ListOrdered,
-  ScrollText, AlertTriangle, ShieldBan, Globe, BarChart3, Settings, Mail, Server, Webhook, LayoutTemplate, TrendingUp,
+  ScrollText, AlertTriangle, ShieldBan, Globe, BarChart3, Settings, Mail, Server, Webhook, LayoutTemplate, TrendingUp, Users,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
