@@ -44,6 +44,9 @@ interface Campaign {
   completed_at: string | null;
   created_at: string;
   html_body: string | null;
+  timezone: string;
+  recurrence_pattern: string | null;
+  recurrence_end_at: string | null;
 }
 
 const statusFilterOptions = ["all", "draft", "scheduled", "sending", "sent", "paused", "cancelled"] as const;
