@@ -69,6 +69,12 @@ export default function SettingsPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
+  // Profile state
+  const [displayName, setDisplayName] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+
   // Settings state
   const [settings, setSettings] = useState<Partial<UserSettings>>({});
   const [showNewKey, setShowNewKey] = useState(false);
@@ -76,6 +82,75 @@ export default function SettingsPage() {
   const [newKeyPerms, setNewKeyPerms] = useState("full");
   const [generatedKey, setGeneratedKey] = useState<string | null>(null);
   const [deleteKeyId, setDeleteKeyId] = useState<string | null>(null);
+
+  // Fetch profile
+  const { data: profile, isLoading: profileLoading } = useQuery({
+    queryKey: ["profile"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("user_id", user!.id)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  useEffect(() => {
+    if (profile) {
+      setDisplayName(profile.display_name ?? "");
+      setAvatarUrl(profile.avatar_url);
+    }
+  }, [profile]);
+
+  // Save profile
+  const saveProfileMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ display_name: displayName, avatar_url: avatarUrl })
+        .eq("user_id", user!.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+      toast.success("Profile updated");
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  // Upload avatar
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("File must be under 2MB");
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload an image file");
+      return;
+    }
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const path = `${user!.id}/avatar.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(path, file, { upsert: true });
+      if (uploadError) throw uploadError;
+      const { data: { publicUrl } } = supabase.storage
+        .from("avatars")
+        .getPublicUrl(path);
+      setAvatarUrl(`${publicUrl}?t=${Date.now()}`);
+      toast.success("Avatar uploaded");
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setUploading(false);
+    }
+  };
 
   // Fetch settings
   const { data: savedSettings, isLoading: settingsLoading } = useQuery({
