@@ -6,6 +6,26 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+/** Replace merge tags like {{name}}, {{email}}, {{first_name}} etc. */
+function replaceMergeTags(
+  template: string,
+  recipient: { email: string; name?: string | null }
+): string {
+  const name = recipient.name || "";
+  const firstName = name.split(/\s+/)[0] || "";
+  const lastName = name.split(/\s+/).slice(1).join(" ") || "";
+
+  return template
+    .replace(/\{\{\s*email\s*\}\}/gi, recipient.email)
+    .replace(/\{\{\s*name\s*\}\}/gi, name)
+    .replace(/\{\{\s*full_name\s*\}\}/gi, name)
+    .replace(/\{\{\s*first_name\s*\}\}/gi, firstName)
+    .replace(/\{\{\s*last_name\s*\}\}/gi, lastName)
+    .replace(/\{\{\s*unsubscribe_url\s*\}\}/gi, "#unsubscribe")
+    .replace(/\{\{\s*date\s*\}\}/gi, new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }))
+    .replace(/\{\{\s*year\s*\}\}/gi, new Date().getFullYear().toString());
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -36,15 +56,14 @@ Deno.serve(async (req) => {
         .update({ status: "sending", sent_at: now })
         .eq("id", campaign.id);
 
-      // Get recipients
+      // Get recipients with name
       const { data: recipients } = await supabase
         .from("campaign_recipients")
-        .select("email")
+        .select("email, name")
         .eq("campaign_id", campaign.id)
         .eq("status", "pending");
 
       if (campaign.ab_test_enabled) {
-        // A/B test: get variants and split recipients evenly
         const { data: variants } = await supabase
           .from("ab_test_variants")
           .select("*")
@@ -59,18 +78,22 @@ Deno.serve(async (req) => {
             const variant = variants[vi];
             const chunk = shuffled.slice(vi * chunkSize, (vi + 1) * chunkSize);
 
-            // Update variant recipient count
             await supabase
               .from("ab_test_variants")
               .update({ recipient_count: chunk.length })
               .eq("id", variant.id);
 
-            // Queue emails with variant-specific fields
-            const queueRows = chunk.map((r: { email: string }) => ({
+            const variantSubject = variant.subject || campaign.subject;
+            const variantHtml = variant.html_body || campaign.html_body || "";
+            const variantPlain = variant.plain_body || campaign.plain_body || "";
+
+            const queueRows = chunk.map((r: { email: string; name?: string | null }) => ({
               user_id: campaign.user_id,
               from_address: variant.from_address || campaign.from_address,
               to_address: r.email,
-              subject: variant.subject || campaign.subject,
+              subject: replaceMergeTags(variantSubject, r),
+              html_body: replaceMergeTags(variantHtml, r),
+              plain_body: variantPlain ? replaceMergeTags(variantPlain, r) : null,
               smtp_server_id: campaign.smtp_server_id,
             }));
             await supabase.from("email_queue").insert(queueRows);
@@ -79,13 +102,15 @@ Deno.serve(async (req) => {
 
         results.push({ id: campaign.id, action: "ab_test_started" });
       } else {
-        // Standard send (non-A/B)
+        // Standard send with merge tag replacement
         if (recipients && recipients.length > 0) {
-          const queueRows = recipients.map((r: { email: string }) => ({
+          const queueRows = recipients.map((r: { email: string; name?: string | null }) => ({
             user_id: campaign.user_id,
             from_address: campaign.from_address,
             to_address: r.email,
-            subject: campaign.subject,
+            subject: replaceMergeTags(campaign.subject, r),
+            html_body: campaign.html_body ? replaceMergeTags(campaign.html_body, r) : null,
+            plain_body: campaign.plain_body ? replaceMergeTags(campaign.plain_body, r) : null,
             smtp_server_id: campaign.smtp_server_id,
           }));
           await supabase.from("email_queue").insert(queueRows);
@@ -94,14 +119,11 @@ Deno.serve(async (req) => {
         results.push({ id: campaign.id, action: "started_sending" });
       }
 
-      // Handle recurring: create next occurrence
+      // Handle recurring
       if (campaign.recurrence_pattern && campaign.recurrence_pattern !== "none") {
         const shouldRecur = await checkRecurrenceEligible(supabase, campaign);
         if (shouldRecur) {
-          const nextDate = computeNextDate(
-            campaign.scheduled_at,
-            campaign.recurrence_pattern
-          );
+          const nextDate = computeNextDate(campaign.scheduled_at, campaign.recurrence_pattern);
 
           if (nextDate) {
             if (campaign.recurrence_end_at && nextDate > new Date(campaign.recurrence_end_at)) {
@@ -127,9 +149,7 @@ Deno.serve(async (req) => {
                 timezone: campaign.timezone,
                 recurrence_pattern: campaign.recurrence_pattern,
                 recurrence_end_at: campaign.recurrence_end_at,
-                recurrence_count: campaign.recurrence_count
-                  ? campaign.recurrence_count - 1
-                  : null,
+                recurrence_count: campaign.recurrence_count ? campaign.recurrence_count - 1 : null,
                 parent_campaign_id: campaign.parent_campaign_id || campaign.id,
                 smtp_server_id: campaign.smtp_server_id,
                 sending_domain_id: campaign.sending_domain_id,
@@ -140,10 +160,11 @@ Deno.serve(async (req) => {
 
             if (newCampaign) {
               if (recipients && recipients.length > 0) {
-                const newRecipientRows = recipients.map((r: { email: string }) => ({
+                const newRecipientRows = recipients.map((r: { email: string; name?: string | null }) => ({
                   campaign_id: newCampaign.id,
                   user_id: campaign.user_id,
                   email: r.email,
+                  name: r.name || null,
                   status: "pending",
                 }));
                 await supabase.from("campaign_recipients").insert(newRecipientRows);
@@ -175,10 +196,7 @@ Deno.serve(async (req) => {
                 .update({ recipient_count: recipients?.length || 0 })
                 .eq("id", newCampaign.id);
 
-              results.push({
-                id: campaign.id,
-                action: `next_occurrence_created:${newCampaign.id}`,
-              });
+              results.push({ id: campaign.id, action: `next_occurrence_created:${newCampaign.id}` });
             }
           }
 
@@ -190,7 +208,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 2. Auto-select A/B test winners for completed "sending" campaigns
+    // 2. Auto-select A/B test winners
     const winnerResults = await selectAbTestWinners(supabase);
     results.push(...winnerResults);
 
@@ -211,7 +229,6 @@ async function selectAbTestWinners(
 ): Promise<{ id: string; action: string }[]> {
   const results: { id: string; action: string }[] = [];
 
-  // Find A/B-enabled campaigns that are "sending" and have no winner yet
   const { data: abCampaigns, error } = await supabase
     .from("campaigns")
     .select("id, user_id")
@@ -222,16 +239,6 @@ async function selectAbTestWinners(
   if (error || !abCampaigns?.length) return results;
 
   for (const campaign of abCampaigns) {
-    // Check if all queued emails for this campaign are done (no pending/queued)
-    const { count: pendingCount } = await supabase
-      .from("email_queue")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", campaign.user_id)
-      .in("status", ["queued", "processing"]);
-
-    // Only proceed if no emails are still in queue for this user
-    // (simplified check — in production you'd filter by campaign)
-    // More precise: check campaign_recipients
     const { count: pendingRecipients } = await supabase
       .from("campaign_recipients")
       .select("id", { count: "exact", head: true })
@@ -240,7 +247,6 @@ async function selectAbTestWinners(
 
     if (pendingRecipients && pendingRecipients > 0) continue;
 
-    // All recipients processed — pick winner by highest click rate
     const { data: variants } = await supabase
       .from("ab_test_variants")
       .select("id, variant_label, sent_count, clicked_count")
@@ -249,7 +255,6 @@ async function selectAbTestWinners(
 
     if (!variants || variants.length === 0) continue;
 
-    // Calculate click rate for each variant
     let winnerId: string | null = null;
     let bestClickRate = -1;
 
@@ -262,28 +267,13 @@ async function selectAbTestWinners(
     }
 
     if (winnerId) {
-      // Mark winner
-      await supabase
-        .from("ab_test_variants")
-        .update({ is_winner: true })
-        .eq("id", winnerId);
-
-      // Clear any previous winners for this campaign
-      await supabase
-        .from("ab_test_variants")
-        .update({ is_winner: false })
-        .eq("campaign_id", campaign.id)
-        .neq("id", winnerId);
-
-      // Update campaign with winner and mark as sent
-      await supabase
-        .from("campaigns")
-        .update({
-          ab_test_winner_variant_id: winnerId,
-          status: "sent",
-          completed_at: new Date().toISOString(),
-        })
-        .eq("id", campaign.id);
+      await supabase.from("ab_test_variants").update({ is_winner: true }).eq("id", winnerId);
+      await supabase.from("ab_test_variants").update({ is_winner: false }).eq("campaign_id", campaign.id).neq("id", winnerId);
+      await supabase.from("campaigns").update({
+        ab_test_winner_variant_id: winnerId,
+        status: "sent",
+        completed_at: new Date().toISOString(),
+      }).eq("id", campaign.id);
 
       results.push({ id: campaign.id, action: `ab_winner_selected:${winnerId}` });
     }
@@ -296,35 +286,18 @@ async function checkRecurrenceEligible(
   supabase: ReturnType<typeof createClient>,
   campaign: Record<string, unknown>
 ): Promise<boolean> {
-  if (
-    typeof campaign.recurrence_count === "number" &&
-    campaign.recurrence_count <= 0
-  ) {
-    return false;
-  }
+  if (typeof campaign.recurrence_count === "number" && campaign.recurrence_count <= 0) return false;
   return true;
 }
 
-function computeNextDate(
-  currentScheduled: string,
-  pattern: string
-): Date | null {
+function computeNextDate(currentScheduled: string, pattern: string): Date | null {
   const d = new Date(currentScheduled);
   switch (pattern) {
-    case "daily":
-      d.setDate(d.getDate() + 1);
-      break;
-    case "weekly":
-      d.setDate(d.getDate() + 7);
-      break;
-    case "biweekly":
-      d.setDate(d.getDate() + 14);
-      break;
-    case "monthly":
-      d.setMonth(d.getMonth() + 1);
-      break;
-    default:
-      return null;
+    case "daily": d.setDate(d.getDate() + 1); break;
+    case "weekly": d.setDate(d.getDate() + 7); break;
+    case "biweekly": d.setDate(d.getDate() + 14); break;
+    case "monthly": d.setMonth(d.getMonth() + 1); break;
+    default: return null;
   }
   return d;
 }
