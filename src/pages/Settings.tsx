@@ -359,6 +359,35 @@ export default function SettingsPage() {
     onError: (err: Error) => toast.error(err.message),
   });
 
+  // Test webhook
+  const testWebhookMutation = useMutation({
+    mutationFn: async (webhookId: string) => {
+      const { data, error } = await supabase.functions.invoke("dispatch-webhooks", {
+        body: {
+          event_type: "email.test",
+          data: {
+            log_id: "test-" + crypto.randomUUID(),
+            message_id: "<test@edapost.local>",
+            from_address: "test@example.com",
+            to_address: "recipient@example.com",
+            subject: "Webhook Test Event",
+            event_type: "test",
+            response_code: "250",
+            smtp_response: "OK",
+            created_at: new Date().toISOString(),
+          },
+        },
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["webhooks"] });
+      toast.success("Test event dispatched");
+    },
+    onError: (err: Error) => toast.error("Test failed: " + err.message),
+  });
+
   const resetWebhookForm = () => {
     setShowWebhookDialog(false);
     setEditingWebhook(null);
