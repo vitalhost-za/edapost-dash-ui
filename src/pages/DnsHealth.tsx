@@ -1,7 +1,7 @@
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { RefreshCw, CheckCircle, XCircle, AlertTriangle, ChevronDown, Clock } from "lucide-react";
+import { RefreshCw, CheckCircle, AlertTriangle, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const dnsRecords = [
@@ -9,43 +9,37 @@ const dnsRecords = [
     name: "SPF Record", status: "valid" as const,
     actual: "v=spf1 include:_spf.edapost.com ~all",
     expected: "v=spf1 include:_spf.edapost.com ~all",
-    detail: "SPF record is correctly configured.",
   },
   {
     name: "DKIM Record", status: "valid" as const,
     actual: "v=DKIM1; k=rsa; p=MIGfMA0GCSqG...",
     expected: "v=DKIM1; k=rsa; p=MIGfMA0GCSqG...",
-    detail: "DKIM signing is active with 2048-bit key.",
   },
   {
     name: "DMARC Record", status: "warning" as const,
     actual: "v=DMARC1; p=none; rua=mailto:dmarc@edapost.com",
     expected: "v=DMARC1; p=reject; rua=mailto:dmarc@edapost.com",
-    detail: "Policy is set to 'none'. Consider upgrading to 'reject' for better protection.",
   },
   {
     name: "MX Record", status: "valid" as const,
     actual: "10 mail.edapost.com",
     expected: "10 mail.edapost.com",
-    detail: "MX record is properly configured.",
   },
   {
     name: "PTR (Reverse DNS)", status: "valid" as const,
     actual: "mail.edapost.com",
     expected: "mail.edapost.com",
-    detail: "Reverse DNS matches forward DNS.",
   },
   {
     name: "TLS Certificate", status: "valid" as const,
     actual: "Valid — expires in 247 days",
     expected: "Valid TLS certificate",
-    detail: "TLS certificate is valid and will expire on Nov 20, 2026.",
   },
 ];
 
 const statusConfig = {
   valid: { icon: CheckCircle, label: "Valid", className: "text-success" },
-  missing: { icon: XCircle, label: "Missing", className: "text-destructive" },
+  missing: { icon: CheckCircle, label: "Missing", className: "text-destructive" },
   warning: { icon: AlertTriangle, label: "Warning", className: "text-warning" },
 };
 
@@ -56,14 +50,9 @@ export default function DnsHealth() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">DNS Health Check</h1>
-            <p className="text-sm text-muted-foreground mt-1">Verify your domain's email authentication records.</p>
+            <p className="text-sm text-muted-foreground mt-1">Last checked: 5 minutes ago</p>
           </div>
-          <Button className="gap-2"><RefreshCw className="h-4 w-4" /> Re-check All</Button>
-        </div>
-
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Clock className="h-3 w-3" />
-          Last checked: March 18, 2026 at 10:42 AM
+          <Button variant="outline" className="gap-2"><RefreshCw className="h-4 w-4" /> Re-check All</Button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -83,8 +72,7 @@ export default function DnsHealth() {
                     </div>
                     <ChevronDown className="h-4 w-4 text-muted-foreground" />
                   </CollapsibleTrigger>
-                  <CollapsibleContent className="px-5 pb-5 space-y-3">
-                    <p className="text-sm text-muted-foreground">{record.detail}</p>
+                  <CollapsibleContent className="px-5 pb-5 space-y-2">
                     <div className="bg-secondary rounded-md p-3 space-y-2">
                       <div>
                         <p className="text-xs text-muted-foreground">Current Value</p>

@@ -5,39 +5,28 @@ import { Mail } from "lucide-react";
 
 export default function Login() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden">
-      {/* Subtle background pattern */}
-      <div className="absolute inset-0 opacity-[0.03]"
-        style={{
-          backgroundImage: `radial-gradient(circle at 1px 1px, hsl(217, 91%, 60%) 1px, transparent 0)`,
-          backgroundSize: "40px 40px",
-        }}
-      />
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-primary/5 rounded-full blur-3xl" />
-
-      <div className="relative w-full max-w-sm mx-4">
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="w-full max-w-sm mx-4">
         <div className="bg-card border border-border rounded-lg p-8 shadow-xl">
           {/* Logo */}
-          <div className="flex items-center justify-center gap-2 mb-8">
-            <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
-              <Mail className="h-5 w-5 text-primary-foreground" />
+          <div className="flex flex-col items-center gap-3 mb-6">
+            <div className="w-12 h-12 rounded-xl bg-primary/15 border border-primary/25 flex items-center justify-center">
+              <Mail className="h-6 w-6 text-primary" />
             </div>
-            <span className="text-xl font-bold tracking-tight">EdaPost</span>
-          </div>
-
-          <div className="text-center mb-6">
-            <h1 className="text-lg font-semibold">Welcome back</h1>
-            <p className="text-sm text-muted-foreground mt-1">Sign in to your account</p>
+            <div className="text-center">
+              <h1 className="text-xl font-bold tracking-tight">EdaPost</h1>
+              <p className="text-sm text-muted-foreground mt-1">Sign in to your account</p>
+            </div>
           </div>
 
           <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
             <div className="space-y-2">
               <Label>Email</Label>
-              <Input type="email" placeholder="admin@edapost.com" />
+              <Input type="email" placeholder="admin@edapost.io" />
             </div>
             <div className="space-y-2">
               <Label>Password</Label>
-              <Input type="password" placeholder="••••••••" />
+              <Input type="password" defaultValue="password123" />
             </div>
             <Button className="w-full">Sign In</Button>
           </form>
@@ -46,10 +35,6 @@ export default function Login() {
             <button className="text-xs text-primary hover:underline">Forgot password?</button>
           </div>
         </div>
-
-        <p className="text-center text-xs text-muted-foreground mt-6">
-          Self-hosted email infrastructure by EdaPost
-        </p>
       </div>
     </div>
   );
