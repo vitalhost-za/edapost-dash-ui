@@ -458,9 +458,11 @@ export type Database = {
           created_at: string
           error_message: string | null
           from_address: string
+          html_body: string | null
           id: string
           max_attempts: number
           next_retry_at: string | null
+          plain_body: string | null
           postfix_queue_id: string | null
           sent_at: string | null
           smtp_server_id: string | null
@@ -475,9 +477,11 @@ export type Database = {
           created_at?: string
           error_message?: string | null
           from_address: string
+          html_body?: string | null
           id?: string
           max_attempts?: number
           next_retry_at?: string | null
+          plain_body?: string | null
           postfix_queue_id?: string | null
           sent_at?: string | null
           smtp_server_id?: string | null
@@ -492,9 +496,11 @@ export type Database = {
           created_at?: string
           error_message?: string | null
           from_address?: string
+          html_body?: string | null
           id?: string
           max_attempts?: number
           next_retry_at?: string | null
+          plain_body?: string | null
           postfix_queue_id?: string | null
           sent_at?: string | null
           smtp_server_id?: string | null

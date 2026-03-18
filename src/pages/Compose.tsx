@@ -15,6 +15,7 @@ import { ChevronDown, Plus, Trash2, Monitor, Smartphone, Send, Loader2, Save, Up
 import { CsvImport } from "@/components/CsvImport";
 import { CampaignScheduler } from "@/components/CampaignScheduler";
 import { AbTestEditor, type AbVariant } from "@/components/AbTestEditor";
+import { MergeTagPicker, replaceMergeTags } from "@/components/MergeTagPicker";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -172,7 +173,9 @@ export default function Compose() {
           user_id: user!.id,
           from_address: fromAddress.trim(),
           to_address: r.email,
-          subject: subject.trim(),
+          subject: replaceMergeTags(subject.trim(), r),
+          html_body: replaceMergeTags(htmlBody, r),
+          plain_body: plainBody ? replaceMergeTags(plainBody, r) : null,
           smtp_server_id: serverId || null,
         }));
         if (queueRows.length > 0) {
@@ -287,8 +290,11 @@ export default function Compose() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Subject *</Label>
-                <Input placeholder="Email subject line" value={subject} onChange={(e) => setSubject(e.target.value)} />
+                <div className="flex items-center justify-between">
+                  <Label>Subject *</Label>
+                  <MergeTagPicker onInsert={(tag) => setSubject((prev) => prev + tag)} />
+                </div>
+                <Input placeholder="Email subject line — use {{name}} for personalization" value={subject} onChange={(e) => setSubject(e.target.value)} />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -323,10 +329,13 @@ export default function Compose() {
               <Tabs defaultValue="html">
                 <div className="flex items-center justify-between">
                   <Label>Email Body {abTestEnabled && <span className="text-xs text-muted-foreground ml-1">(default — overridden by variants)</span>}</Label>
-                  <TabsList className="h-8">
-                    <TabsTrigger value="html" className="text-xs">HTML</TabsTrigger>
-                    <TabsTrigger value="plain" className="text-xs">Plain Text</TabsTrigger>
-                  </TabsList>
+                  <div className="flex items-center gap-2">
+                    <MergeTagPicker onInsert={(tag) => setHtmlBody((prev) => prev + tag)} />
+                    <TabsList className="h-8">
+                      <TabsTrigger value="html" className="text-xs">HTML</TabsTrigger>
+                      <TabsTrigger value="plain" className="text-xs">Plain Text</TabsTrigger>
+                    </TabsList>
+                  </div>
                 </div>
                 <TabsContent value="html">
                   <Textarea
