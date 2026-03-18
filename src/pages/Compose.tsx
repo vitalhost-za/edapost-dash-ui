@@ -329,10 +329,13 @@ export default function Compose() {
               <Tabs defaultValue="html">
                 <div className="flex items-center justify-between">
                   <Label>Email Body {abTestEnabled && <span className="text-xs text-muted-foreground ml-1">(default — overridden by variants)</span>}</Label>
-                  <TabsList className="h-8">
-                    <TabsTrigger value="html" className="text-xs">HTML</TabsTrigger>
-                    <TabsTrigger value="plain" className="text-xs">Plain Text</TabsTrigger>
-                  </TabsList>
+                  <div className="flex items-center gap-2">
+                    <MergeTagPicker onInsert={(tag) => setHtmlBody((prev) => prev + tag)} />
+                    <TabsList className="h-8">
+                      <TabsTrigger value="html" className="text-xs">HTML</TabsTrigger>
+                      <TabsTrigger value="plain" className="text-xs">Plain Text</TabsTrigger>
+                    </TabsList>
+                  </div>
                 </div>
                 <TabsContent value="html">
                   <Textarea
