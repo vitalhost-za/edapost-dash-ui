@@ -405,6 +405,51 @@ export type Database = {
           },
         ]
       }
+      email_templates: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          html_body: string
+          id: string
+          is_favorite: boolean
+          name: string
+          plain_body: string | null
+          subject: string
+          thumbnail_url: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          html_body?: string
+          id?: string
+          is_favorite?: boolean
+          name: string
+          plain_body?: string | null
+          subject?: string
+          thumbnail_url?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          html_body?: string
+          id?: string
+          is_favorite?: boolean
+          name?: string
+          plain_body?: string | null
+          subject?: string
+          thumbnail_url?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       ip_warmup: {
         Row: {
           created_at: string
