@@ -178,7 +178,7 @@ export default function Compose() {
       toast.error("From, To, and Subject are required");
       return;
     }
-    saveMutation.mutate(scheduledAt ? "scheduled" : "sending");
+    saveMutation.mutate(scheduleConfig.scheduledAt ? "scheduled" : "sending");
   };
 
   const previewHtml = useMemo(() => {
