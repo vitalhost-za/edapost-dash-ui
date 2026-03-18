@@ -514,7 +514,34 @@ export default function Compose() {
               </div>
             </Collapsible>
 
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-3">
+              <Dialog open={testEmailOpen} onOpenChange={setTestEmailOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="gap-2" disabled={!fromAddress.trim() || !subject.trim()}>
+                    <FlaskConical className="h-4 w-4" /> Send Test
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader><DialogTitle>Send Test Email</DialogTitle></DialogHeader>
+                  <p className="text-sm text-muted-foreground">
+                    Send a single test email with merge tags replaced using sample data (name: "Test User").
+                  </p>
+                  <div className="space-y-3 mt-2">
+                    <div className="space-y-1.5">
+                      <Label>Send to</Label>
+                      <Input placeholder="your@email.com" value={testEmailAddress} onChange={(e) => setTestEmailAddress(e.target.value)} />
+                    </div>
+                    <Button
+                      className="w-full gap-2"
+                      disabled={!testEmailAddress.trim().includes("@") || testEmailMutation.isPending}
+                      onClick={() => testEmailMutation.mutate()}
+                    >
+                      {testEmailMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                      Send Test Email
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
               <Button
                 variant="outline"
                 className="gap-2"
