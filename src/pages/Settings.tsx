@@ -48,6 +48,17 @@ interface UserSettings {
   notify_queue_full: boolean;
   notify_server_down: boolean;
   warmup_enabled: boolean;
+  worker_concurrency: number;
+  worker_batch_size: number;
+}
+
+interface DomainRateLimit {
+  id: string;
+  domain: string;
+  max_per_minute: number;
+  max_per_hour: number;
+  is_active: boolean;
+  created_at: string;
 }
 
 interface ApiKey {
