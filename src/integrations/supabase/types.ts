@@ -14,6 +14,50 @@ export type Database = {
   }
   public: {
     Tables: {
+      bounces: {
+        Row: {
+          attempts: number
+          bounce_code: string | null
+          bounce_type: string
+          created_at: string
+          email: string
+          id: string
+          reason: string | null
+          smtp_server_id: string | null
+          user_id: string
+        }
+        Insert: {
+          attempts?: number
+          bounce_code?: string | null
+          bounce_type?: string
+          created_at?: string
+          email: string
+          id?: string
+          reason?: string | null
+          smtp_server_id?: string | null
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          bounce_code?: string | null
+          bounce_type?: string
+          created_at?: string
+          email?: string
+          id?: string
+          reason?: string | null
+          smtp_server_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bounces_smtp_server_id_fkey"
+            columns: ["smtp_server_id"]
+            isOneToOne: false
+            referencedRelation: "smtp_servers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaign_recipients: {
         Row: {
           campaign_id: string
@@ -452,6 +496,33 @@ export type Database = {
           status?: string
           tls_enabled?: boolean
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      suppression_list: {
+        Row: {
+          added_by: string
+          created_at: string
+          email: string
+          id: string
+          reason: string
+          user_id: string
+        }
+        Insert: {
+          added_by?: string
+          created_at?: string
+          email: string
+          id?: string
+          reason?: string
+          user_id: string
+        }
+        Update: {
+          added_by?: string
+          created_at?: string
+          email?: string
+          id?: string
+          reason?: string
           user_id?: string
         }
         Relationships: []
