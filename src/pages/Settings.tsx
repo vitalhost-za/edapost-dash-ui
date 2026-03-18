@@ -306,14 +306,67 @@ export default function SettingsPage() {
       <div className="space-y-6">
         <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
 
-        <Tabs defaultValue="general">
+        <Tabs defaultValue="profile">
           <TabsList className="flex-wrap">
+            <TabsTrigger value="profile" className="gap-1.5"><User className="h-3.5 w-3.5" /> Profile</TabsTrigger>
             <TabsTrigger value="general" className="gap-1.5"><Settings2 className="h-3.5 w-3.5" /> General</TabsTrigger>
             <TabsTrigger value="smtp" className="gap-1.5"><Server className="h-3.5 w-3.5" /> SMTP</TabsTrigger>
             <TabsTrigger value="auth" className="gap-1.5"><Shield className="h-3.5 w-3.5" /> Authentication</TabsTrigger>
             <TabsTrigger value="notifications" className="gap-1.5"><Bell className="h-3.5 w-3.5" /> Notifications</TabsTrigger>
             <TabsTrigger value="apikeys" className="gap-1.5"><Key className="h-3.5 w-3.5" /> API Keys</TabsTrigger>
           </TabsList>
+
+          {/* Profile */}
+          <TabsContent value="profile" className="mt-6">
+            <div className="bg-card border border-border rounded-lg p-5 space-y-6 max-w-2xl">
+              <div className="flex items-center gap-6">
+                <div className="relative group">
+                  <Avatar className="h-20 w-20">
+                    {avatarUrl ? (
+                      <AvatarImage src={avatarUrl} alt="Avatar" />
+                    ) : null}
+                    <AvatarFallback className="text-lg bg-primary/20 text-primary">
+                      {displayName?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase() || "?"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <button
+                    onClick={() => avatarInputRef.current?.click()}
+                    disabled={uploading}
+                    className="absolute inset-0 flex items-center justify-center bg-background/60 opacity-0 group-hover:opacity-100 rounded-full transition-opacity"
+                  >
+                    {uploading ? <Loader2 className="h-5 w-5 animate-spin text-foreground" /> : <Camera className="h-5 w-5 text-foreground" />}
+                  </button>
+                  <input
+                    ref={avatarInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleAvatarUpload}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">Profile Photo</p>
+                  <p className="text-xs text-muted-foreground">JPG, PNG or GIF. Max 2MB.</p>
+                  <Button variant="outline" size="sm" className="mt-1" onClick={() => avatarInputRef.current?.click()} disabled={uploading}>
+                    {uploading ? "Uploading..." : "Change Photo"}
+                  </Button>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Display Name</Label>
+                <Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="Your name" />
+              </div>
+              <div className="space-y-2">
+                <Label>Email</Label>
+                <Input value={user?.email ?? ""} disabled className="opacity-60" />
+                <p className="text-xs text-muted-foreground">Email cannot be changed here.</p>
+              </div>
+              <Button className="gap-2" onClick={() => saveProfileMutation.mutate()} disabled={saveProfileMutation.isPending}>
+                {saveProfileMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                Save Profile
+              </Button>
+            </div>
+          </TabsContent>
 
           {/* General */}
           <TabsContent value="general" className="mt-6">
