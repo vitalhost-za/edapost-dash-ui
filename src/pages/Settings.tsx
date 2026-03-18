@@ -466,6 +466,92 @@ export default function SettingsPage() {
     warmup_enabled: settings.warmup_enabled,
   });
 
+  const handleSaveWorker = () => saveMutation.mutate({
+    worker_concurrency: settings.worker_concurrency,
+    worker_batch_size: settings.worker_batch_size,
+  });
+
+  // Fetch domain rate limits
+  const { data: rateLimits, isLoading: rateLimitsLoading } = useQuery({
+    queryKey: ["domain-rate-limits"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("domain_rate_limits")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data as DomainRateLimit[];
+    },
+  });
+
+  // Create/update rate limit
+  const saveRateLimitMutation = useMutation({
+    mutationFn: async () => {
+      if (editingRateLimit) {
+        const { error } = await supabase.from("domain_rate_limits").update({
+          domain: rlDomain.trim().toLowerCase(),
+          max_per_minute: rlMaxPerMinute,
+          max_per_hour: rlMaxPerHour,
+        }).eq("id", editingRateLimit.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("domain_rate_limits").insert({
+          user_id: user!.id,
+          domain: rlDomain.trim().toLowerCase(),
+          max_per_minute: rlMaxPerMinute,
+          max_per_hour: rlMaxPerHour,
+        });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["domain-rate-limits"] });
+      resetRateLimitForm();
+      toast.success(editingRateLimit ? "Rate limit updated" : "Rate limit created");
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  // Toggle rate limit active
+  const toggleRateLimitMutation = useMutation({
+    mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
+      const { error } = await supabase.from("domain_rate_limits").update({ is_active }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["domain-rate-limits"] }),
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  // Delete rate limit
+  const deleteRateLimitMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("domain_rate_limits").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["domain-rate-limits"] });
+      setDeleteRateLimitId(null);
+      toast.success("Rate limit deleted");
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const resetRateLimitForm = () => {
+    setShowRateLimitDialog(false);
+    setEditingRateLimit(null);
+    setRlDomain("");
+    setRlMaxPerMinute(10);
+    setRlMaxPerHour(200);
+  };
+
+  const openEditRateLimit = (rl: DomainRateLimit) => {
+    setEditingRateLimit(rl);
+    setRlDomain(rl.domain);
+    setRlMaxPerMinute(rl.max_per_minute);
+    setRlMaxPerHour(rl.max_per_hour);
+    setShowRateLimitDialog(true);
+  };
+
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     toast.success("Copied to clipboard");
