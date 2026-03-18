@@ -21,6 +21,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   Plus, Trash2, Copy, Loader2, Save, Key, Bell, Server, Settings2, Shield,
   CheckCircle, User, Camera, Webhook, ExternalLink, AlertTriangle, Pencil, Send,
+  Gauge, Cog,
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
@@ -47,6 +48,17 @@ interface UserSettings {
   notify_queue_full: boolean;
   notify_server_down: boolean;
   warmup_enabled: boolean;
+  worker_concurrency: number;
+  worker_batch_size: number;
+}
+
+interface DomainRateLimit {
+  id: string;
+  domain: string;
+  max_per_minute: number;
+  max_per_hour: number;
+  is_active: boolean;
+  created_at: string;
 }
 
 interface ApiKey {
@@ -118,6 +130,14 @@ export default function SettingsPage() {
   const [webhookSecret, setWebhookSecret] = useState("");
   const [webhookEvents, setWebhookEvents] = useState<string[]>([]);
   const [deleteWebhookId, setDeleteWebhookId] = useState<string | null>(null);
+
+  // Rate limit state
+  const [showRateLimitDialog, setShowRateLimitDialog] = useState(false);
+  const [editingRateLimit, setEditingRateLimit] = useState<DomainRateLimit | null>(null);
+  const [rlDomain, setRlDomain] = useState("");
+  const [rlMaxPerMinute, setRlMaxPerMinute] = useState(10);
+  const [rlMaxPerHour, setRlMaxPerHour] = useState(200);
+  const [deleteRateLimitId, setDeleteRateLimitId] = useState<string | null>(null);
 
   // Fetch profile
   const { data: profile, isLoading: profileLoading } = useQuery({
@@ -446,6 +466,92 @@ export default function SettingsPage() {
     warmup_enabled: settings.warmup_enabled,
   });
 
+  const handleSaveWorker = () => saveMutation.mutate({
+    worker_concurrency: settings.worker_concurrency,
+    worker_batch_size: settings.worker_batch_size,
+  });
+
+  // Fetch domain rate limits
+  const { data: rateLimits, isLoading: rateLimitsLoading } = useQuery({
+    queryKey: ["domain-rate-limits"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("domain_rate_limits")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data as DomainRateLimit[];
+    },
+  });
+
+  // Create/update rate limit
+  const saveRateLimitMutation = useMutation({
+    mutationFn: async () => {
+      if (editingRateLimit) {
+        const { error } = await supabase.from("domain_rate_limits").update({
+          domain: rlDomain.trim().toLowerCase(),
+          max_per_minute: rlMaxPerMinute,
+          max_per_hour: rlMaxPerHour,
+        }).eq("id", editingRateLimit.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("domain_rate_limits").insert({
+          user_id: user!.id,
+          domain: rlDomain.trim().toLowerCase(),
+          max_per_minute: rlMaxPerMinute,
+          max_per_hour: rlMaxPerHour,
+        });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["domain-rate-limits"] });
+      resetRateLimitForm();
+      toast.success(editingRateLimit ? "Rate limit updated" : "Rate limit created");
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  // Toggle rate limit active
+  const toggleRateLimitMutation = useMutation({
+    mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
+      const { error } = await supabase.from("domain_rate_limits").update({ is_active }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["domain-rate-limits"] }),
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  // Delete rate limit
+  const deleteRateLimitMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("domain_rate_limits").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["domain-rate-limits"] });
+      setDeleteRateLimitId(null);
+      toast.success("Rate limit deleted");
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const resetRateLimitForm = () => {
+    setShowRateLimitDialog(false);
+    setEditingRateLimit(null);
+    setRlDomain("");
+    setRlMaxPerMinute(10);
+    setRlMaxPerHour(200);
+  };
+
+  const openEditRateLimit = (rl: DomainRateLimit) => {
+    setEditingRateLimit(rl);
+    setRlDomain(rl.domain);
+    setRlMaxPerMinute(rl.max_per_minute);
+    setRlMaxPerHour(rl.max_per_hour);
+    setShowRateLimitDialog(true);
+  };
+
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     toast.success("Copied to clipboard");
@@ -473,6 +579,8 @@ export default function SettingsPage() {
             <TabsTrigger value="notifications" className="gap-1.5"><Bell className="h-3.5 w-3.5" /> Notifications</TabsTrigger>
             <TabsTrigger value="apikeys" className="gap-1.5"><Key className="h-3.5 w-3.5" /> API Keys</TabsTrigger>
             <TabsTrigger value="webhooks" className="gap-1.5"><Webhook className="h-3.5 w-3.5" /> Webhooks</TabsTrigger>
+            <TabsTrigger value="ratelimits" className="gap-1.5"><Gauge className="h-3.5 w-3.5" /> Rate Limits</TabsTrigger>
+            <TabsTrigger value="worker" className="gap-1.5"><Cog className="h-3.5 w-3.5" /> Worker</TabsTrigger>
           </TabsList>
 
           {/* Profile */}
@@ -855,6 +963,113 @@ export default function SettingsPage() {
               )}
             </div>
           </TabsContent>
+
+          {/* Rate Limits */}
+          <TabsContent value="ratelimits" className="mt-6">
+            <div className="space-y-4 max-w-3xl">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Configure per-domain sending rate limits to protect your sender reputation.</p>
+                  <p className="text-xs text-muted-foreground mt-1">Use <code className="bg-secondary px-1 rounded">*</code> as domain to set a default limit for all domains.</p>
+                </div>
+                <Button className="gap-2" onClick={() => { resetRateLimitForm(); setShowRateLimitDialog(true); }}>
+                  <Plus className="h-4 w-4" /> Add Rate Limit
+                </Button>
+              </div>
+
+              {rateLimitsLoading ? (
+                <div className="flex items-center justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+              ) : rateLimits && rateLimits.length > 0 ? (
+                <div className="bg-card border border-border rounded-lg overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border">
+                        <th className="p-3 text-left text-xs font-medium text-muted-foreground">Domain</th>
+                        <th className="p-3 text-center text-xs font-medium text-muted-foreground">Per Minute</th>
+                        <th className="p-3 text-center text-xs font-medium text-muted-foreground">Per Hour</th>
+                        <th className="p-3 text-center text-xs font-medium text-muted-foreground">Active</th>
+                        <th className="p-3 text-left text-xs font-medium text-muted-foreground">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rateLimits.map((rl) => (
+                        <tr key={rl.id} className="border-b border-border hover:bg-accent/30 transition-colors">
+                          <td className="p-3 font-medium font-mono text-xs">{rl.domain}</td>
+                          <td className="p-3 text-center">{rl.max_per_minute}</td>
+                          <td className="p-3 text-center">{rl.max_per_hour}</td>
+                          <td className="p-3 text-center">
+                            <Switch
+                              checked={rl.is_active}
+                              onCheckedChange={(v) => toggleRateLimitMutation.mutate({ id: rl.id, is_active: v })}
+                            />
+                          </td>
+                          <td className="p-3">
+                            <div className="flex gap-1">
+                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditRateLimit(rl)}>
+                                <Pencil className="h-3 w-3" />
+                              </Button>
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteRateLimitId(rl.id)}>
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="bg-card border border-border rounded-lg flex flex-col items-center justify-center py-16 text-center">
+                  <div className="p-3 rounded-xl bg-muted mb-3"><Gauge className="h-6 w-6 text-muted-foreground" /></div>
+                  <p className="text-sm font-medium">No rate limits configured</p>
+                  <p className="text-xs text-muted-foreground mt-1">Add per-domain limits to control sending speed and protect your reputation.</p>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
+          {/* Worker Configuration */}
+          <TabsContent value="worker" className="mt-6">
+            <div className="bg-card border border-border rounded-lg p-5 space-y-4 max-w-2xl">
+              <p className="text-sm text-muted-foreground">Configure the SMTP worker that processes your email queue.</p>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Worker Concurrency</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={50}
+                    value={settings.worker_concurrency ?? 5}
+                    onChange={(e) => updateField("worker_concurrency", parseInt(e.target.value) || 5)}
+                  />
+                  <p className="text-xs text-muted-foreground">Number of emails sent simultaneously per batch cycle.</p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Batch Size</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={100}
+                    value={settings.worker_batch_size ?? 20}
+                    onChange={(e) => updateField("worker_batch_size", parseInt(e.target.value) || 20)}
+                  />
+                  <p className="text-xs text-muted-foreground">Max emails to pick up from the queue per worker run.</p>
+                </div>
+              </div>
+              <div className="bg-secondary rounded-md p-3 space-y-1">
+                <p className="text-sm font-medium">Retry Strategy</p>
+                <p className="text-xs text-muted-foreground">
+                  Failed emails are retried with exponential backoff: 30s → 60s → 120s → 240s.
+                  After {settings.smtp_connection_limit ? "5" : "5"} failed attempts, emails are marked as permanently failed.
+                  Hard bounces (550/553/554) are never retried.
+                </p>
+              </div>
+              <Button className="gap-2" onClick={handleSaveWorker} disabled={saveMutation.isPending}>
+                {saveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                Save Worker Config
+              </Button>
+            </div>
+          </TabsContent>
         </Tabs>
       </div>
 
@@ -992,6 +1207,67 @@ export default function SettingsPage() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Delete Webhook
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Rate Limit Dialog */}
+      <Dialog open={showRateLimitDialog} onOpenChange={(open) => { if (!open) resetRateLimitForm(); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingRateLimit ? "Edit Rate Limit" : "Add Rate Limit"}</DialogTitle>
+            <DialogDescription>Set per-domain sending rate limits to control delivery speed.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Domain</Label>
+              <Input
+                placeholder="e.g., gmail.com or * for all"
+                value={rlDomain}
+                onChange={(e) => setRlDomain(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">Use * as a catch-all default for unlisted domains.</p>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Max per Minute</Label>
+                <Input type="number" min={1} value={rlMaxPerMinute} onChange={(e) => setRlMaxPerMinute(parseInt(e.target.value) || 10)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Max per Hour</Label>
+                <Input type="number" min={1} value={rlMaxPerHour} onChange={(e) => setRlMaxPerHour(parseInt(e.target.value) || 200)} />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={resetRateLimitForm}>Cancel</Button>
+            <Button
+              onClick={() => saveRateLimitMutation.mutate()}
+              disabled={saveRateLimitMutation.isPending || !rlDomain.trim()}
+              className="gap-2"
+            >
+              {saveRateLimitMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              {editingRateLimit ? "Update" : "Create"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Rate Limit Confirmation */}
+      <AlertDialog open={!!deleteRateLimitId} onOpenChange={() => setDeleteRateLimitId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this rate limit?</AlertDialogTitle>
+            <AlertDialogDescription>This domain will no longer have sending rate restrictions.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteRateLimitId && deleteRateLimitMutation.mutate(deleteRateLimitId)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
