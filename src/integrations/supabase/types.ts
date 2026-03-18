@@ -251,6 +251,65 @@ export type Database = {
           },
         ]
       }
+      email_logs: {
+        Row: {
+          created_at: string
+          event_type: string
+          from_address: string
+          id: string
+          ip_address: string | null
+          message_id: string | null
+          metadata: Json | null
+          response_code: string | null
+          smtp_response: string | null
+          smtp_server_id: string | null
+          subject: string | null
+          to_address: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          from_address: string
+          id?: string
+          ip_address?: string | null
+          message_id?: string | null
+          metadata?: Json | null
+          response_code?: string | null
+          smtp_response?: string | null
+          smtp_server_id?: string | null
+          subject?: string | null
+          to_address: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          from_address?: string
+          id?: string
+          ip_address?: string | null
+          message_id?: string | null
+          metadata?: Json | null
+          response_code?: string | null
+          smtp_response?: string | null
+          smtp_server_id?: string | null
+          subject?: string | null
+          to_address?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_logs_smtp_server_id_fkey"
+            columns: ["smtp_server_id"]
+            isOneToOne: false
+            referencedRelation: "smtp_servers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_queue: {
         Row: {
           attempts: number
