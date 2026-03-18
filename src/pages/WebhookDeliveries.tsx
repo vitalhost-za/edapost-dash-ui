@@ -313,9 +313,27 @@ export default function WebhookDeliveries() {
                 </div>
                 <div className="bg-secondary rounded-md p-3">
                   <p className="text-xs text-muted-foreground">Attempt</p>
-                  <p className="text-sm font-medium mt-0.5">#{selectedDelivery.attempt_number}</p>
+                  <p className="text-sm font-medium mt-0.5">#{selectedDelivery.attempt_number} of {selectedDelivery.max_attempts}</p>
                 </div>
               </div>
+
+              {/* Retry status */}
+              {!selectedDelivery.success && selectedDelivery.next_retry_at && (
+                <div className="bg-warning/10 border border-warning/20 rounded-md p-3">
+                  <p className="text-xs font-medium text-warning">Retry Scheduled</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Next retry at {format(new Date(selectedDelivery.next_retry_at), "PPpp")}
+                  </p>
+                </div>
+              )}
+              {!selectedDelivery.success && selectedDelivery.attempt_number >= selectedDelivery.max_attempts && (
+                <div className="bg-destructive/10 border border-destructive/20 rounded-md p-3">
+                  <p className="text-xs font-medium text-destructive">Max Retries Exhausted</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    This delivery failed after {selectedDelivery.max_attempts} attempts and will not be retried.
+                  </p>
+                </div>
+              )}
 
               {/* Error */}
               {selectedDelivery.error_message && (
