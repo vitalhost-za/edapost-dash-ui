@@ -12,8 +12,8 @@
 
 <!-- Update these counters as items are checked off -->
 - **Total tasks:** 96
-- **Completed:** 18
-- **Remaining:** 78
+- **Completed:** 30
+- **Remaining:** 66
 
 ---
 
@@ -102,16 +102,16 @@
 - [ ] ⚛️ **App** — Write unit tests for the email API
 
 ### 6c. SMTP Worker
-- [ ] ⚛️ **App** — Implement worker that pops jobs from Redis queue
-- [ ] ⚛️ **App** — Implement MIME email construction
-- [ ] ⚛️ **App** — Implement submission to Postfix (localhost:25 or 587)
-- [ ] ⚛️ **App** — Implement result recording (success, bounce, error)
-- [ ] ⚛️ **App** — Add configurable worker concurrency
-- [ ] ⚛️ **App** — Implement retry logic with exponential backoff
+- [x] ⚛️ **App** — Implement worker that pops jobs from Redis queue
+- [x] ⚛️ **App** — Implement MIME email construction
+- [x] ⚛️ **App** — Implement submission to Postfix (localhost:25 or 587)
+- [x] ⚛️ **App** — Implement result recording (success, bounce, error)
+- [x] ⚛️ **App** — Add configurable worker concurrency
+- [x] ⚛️ **App** — Implement retry logic with exponential backoff
 - [ ] ⚛️ **App** — Write unit tests for the worker
 
 ### 6d. Rate Limiting
-- [ ] ⚛️ **App** — Implement per-domain sending rate limits
+- [x] ⚛️ **App** — Implement per-domain sending rate limits
 - [x] ⚛️ **App** — Make rate limits configurable
 - [ ] ⚛️ **App** — Test rate limiting under load
 
