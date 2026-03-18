@@ -144,6 +144,15 @@ export default function Login() {
               {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Sign In
             </Button>
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={() => setForgotMode(true)}
+                className="text-sm text-muted-foreground hover:text-foreground"
+              >
+                Forgot password?
+              </button>
+            </div>
           </form>
         </div>
       </div>
