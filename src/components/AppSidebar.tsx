@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, PenSquare, Megaphone, ListOrdered,
-  ScrollText, AlertTriangle, ShieldBan, Globe, BarChart3, Settings, Mail
+  ScrollText, AlertTriangle, ShieldBan, Globe, BarChart3, Settings, Mail, Server
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -12,6 +12,7 @@ import edapostLogo from "@/assets/edapost-logo.png";
 
 const navItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
+  { title: "Servers", url: "/servers", icon: Server },
   { title: "Compose", url: "/compose", icon: PenSquare },
   { title: "Campaigns", url: "/campaigns", icon: Megaphone },
   { title: "Queue", url: "/queue", icon: ListOrdered },

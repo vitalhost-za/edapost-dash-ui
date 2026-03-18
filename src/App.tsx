@@ -15,6 +15,7 @@ import Suppression from "./pages/Suppression";
 import DnsHealth from "./pages/DnsHealth";
 import Analytics from "./pages/Analytics";
 import SettingsPage from "./pages/Settings";
+import Servers from "./pages/Servers";
 import Login from "./pages/Login";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
@@ -32,6 +33,7 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/servers" element={<ProtectedRoute><Servers /></ProtectedRoute>} />
             <Route path="/compose" element={<ProtectedRoute><Compose /></ProtectedRoute>} />
             <Route path="/campaigns" element={<ProtectedRoute><Campaigns /></ProtectedRoute>} />
             <Route path="/queue" element={<ProtectedRoute><Queue /></ProtectedRoute>} />
