@@ -112,10 +112,10 @@ export default function Compose() {
 
       // If sending, also queue the emails
       if (status === "sending") {
-        const queueRows = recipients.map((email) => ({
+        const queueRows = recipients.map((r) => ({
           user_id: user!.id,
           from_address: fromAddress.trim(),
-          to_address: email,
+          to_address: r.email,
           subject: subject.trim(),
           smtp_server_id: serverId || null,
         }));
