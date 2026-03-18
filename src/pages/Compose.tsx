@@ -229,6 +229,33 @@ export default function Compose() {
     onError: (err: Error) => toast.error(err.message),
   });
 
+  // Send test email
+  const [testEmailOpen, setTestEmailOpen] = useState(false);
+  const [testEmailAddress, setTestEmailAddress] = useState("");
+  const testEmailMutation = useMutation({
+    mutationFn: async () => {
+      const testRecipient = { email: testEmailAddress.trim(), name: "Test User" };
+      const { data, error } = await supabase.functions.invoke("send-test-email", {
+        body: {
+          to_address: testRecipient.email,
+          from_address: fromAddress.trim(),
+          subject: replaceMergeTags(subject.trim(), testRecipient),
+          html_body: replaceMergeTags(htmlBody, testRecipient),
+          plain_body: plainBody ? replaceMergeTags(plainBody, testRecipient) : null,
+          smtp_server_id: serverId || null,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: () => {
+      toast.success(`Test email queued to ${testEmailAddress}`);
+      setTestEmailOpen(false);
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
   const handleSend = () => {
     if (!fromAddress.trim() || !subject.trim() || !toField.trim()) {
       toast.error("From, To, and Subject are required");
