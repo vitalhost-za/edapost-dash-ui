@@ -11,7 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ChevronDown, Plus, Trash2, Monitor, Smartphone, Send, Loader2, Save, Upload, LayoutTemplate } from "lucide-react";
+import { ChevronDown, Plus, Trash2, Monitor, Smartphone, Send, Loader2, Save, Upload, LayoutTemplate, Users } from "lucide-react";
 import { CsvImport } from "@/components/CsvImport";
 import { CampaignScheduler } from "@/components/CampaignScheduler";
 import { AbTestEditor, type AbVariant } from "@/components/AbTestEditor";
@@ -79,6 +79,34 @@ export default function Compose() {
       return data;
     },
   });
+
+  const { data: contactLists } = useQuery({
+    queryKey: ["contact-lists-for-compose"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("contact_lists")
+        .select("id, name, contact_count")
+        .order("name");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const loadContactList = async (listId: string) => {
+    const { data, error } = await supabase
+      .from("contact_list_members")
+      .select("email, name")
+      .eq("list_id", listId);
+    if (error) { toast.error(error.message); return; }
+    if (!data || data.length === 0) { toast.error("List is empty"); return; }
+    const newEmails = data.map((r: { email: string; name: string | null }) => r.name ? `${r.name} <${r.email}>` : r.email);
+    setToField((prev) => {
+      const existing = prev.trim();
+      return existing ? `${existing}\n${newEmails.join("\n")}` : newEmails.join("\n");
+    });
+    const list = contactLists?.find((l) => l.id === listId);
+    toast.success(`Loaded ${data.length} contacts from "${list?.name || "list"}"`);
+  };
 
   const applyTemplate = (templateId: string) => {
     const tpl = emailTemplates?.find((t) => t.id === templateId);
@@ -277,17 +305,34 @@ export default function Compose() {
                     {toField.split(/[,;\n]+/).filter((e) => e.trim().includes("@")).length} recipient(s)
                   </p>
                 </div>
-                <CsvImport
-                  onImport={(recipients) => {
-                    const newEmails = recipients.map((r) =>
-                      r.name ? `${r.name} <${r.email}>` : r.email
-                    );
-                    setToField((prev) => {
-                      const existing = prev.trim();
-                      return existing ? `${existing}\n${newEmails.join("\n")}` : newEmails.join("\n");
-                    });
-                  }}
-                />
+                <div className="flex items-center gap-2">
+                  <CsvImport
+                    onImport={(recipients) => {
+                      const newEmails = recipients.map((r) =>
+                        r.name ? `${r.name} <${r.email}>` : r.email
+                      );
+                      setToField((prev) => {
+                        const existing = prev.trim();
+                        return existing ? `${existing}\n${newEmails.join("\n")}` : newEmails.join("\n");
+                      });
+                    }}
+                  />
+                  {contactLists && contactLists.length > 0 && (
+                    <Select onValueChange={loadContactList}>
+                      <SelectTrigger className="w-auto h-8 text-xs gap-1.5">
+                        <Users className="h-3 w-3" />
+                        <SelectValue placeholder="Load list…" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {contactLists.map((l) => (
+                          <SelectItem key={l.id} value={l.id}>
+                            {l.name} ({l.contact_count})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">

@@ -22,6 +22,7 @@ import NotFound from "./pages/NotFound";
 import WebhookDeliveries from "./pages/WebhookDeliveries";
 import Templates from "./pages/Templates";
 import CampaignAnalytics from "./pages/CampaignAnalytics";
+import ContactLists from "./pages/ContactLists";
 
 const queryClient = new QueryClient();
 
@@ -41,6 +42,7 @@ const App = () => (
             <Route path="/campaigns" element={<ProtectedRoute><Campaigns /></ProtectedRoute>} />
             <Route path="/campaign-analytics" element={<ProtectedRoute><CampaignAnalytics /></ProtectedRoute>} />
             <Route path="/templates" element={<ProtectedRoute><Templates /></ProtectedRoute>} />
+            <Route path="/contact-lists" element={<ProtectedRoute><ContactLists /></ProtectedRoute>} />
             <Route path="/queue" element={<ProtectedRoute><Queue /></ProtectedRoute>} />
             <Route path="/logs" element={<ProtectedRoute><Logs /></ProtectedRoute>} />
             <Route path="/bounces" element={<ProtectedRoute><Bounces /></ProtectedRoute>} />

@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, PenSquare, Megaphone, ListOrdered,
-  ScrollText, AlertTriangle, ShieldBan, Globe, BarChart3, Settings, Mail, Server, Webhook, LayoutTemplate, TrendingUp,
+  ScrollText, AlertTriangle, ShieldBan, Globe, BarChart3, Settings, Mail, Server, Webhook, LayoutTemplate, TrendingUp, Users,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -17,6 +17,7 @@ const navItems = [
   { title: "Campaigns", url: "/campaigns", icon: Megaphone },
   { title: "Campaign Analytics", url: "/campaign-analytics", icon: TrendingUp },
   { title: "Templates", url: "/templates", icon: LayoutTemplate },
+  { title: "Contact Lists", url: "/contact-lists", icon: Users },
   { title: "Queue", url: "/queue", icon: ListOrdered },
   { title: "Logs", url: "/logs", icon: ScrollText },
   { title: "Bounces", url: "/bounces", icon: AlertTriangle },
