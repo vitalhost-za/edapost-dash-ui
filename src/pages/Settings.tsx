@@ -59,6 +59,32 @@ interface ApiKey {
   created_at: string;
 }
 
+interface WebhookEntry {
+  id: string;
+  name: string;
+  url: string;
+  secret: string | null;
+  events: string[];
+  is_active: boolean;
+  last_triggered_at: string | null;
+  last_status_code: number | null;
+  failure_count: number;
+  created_at: string;
+}
+
+const WEBHOOK_EVENTS = [
+  { value: "email.sent", label: "Email Sent" },
+  { value: "email.delivered", label: "Email Delivered" },
+  { value: "email.bounced", label: "Email Bounced" },
+  { value: "email.opened", label: "Email Opened" },
+  { value: "email.clicked", label: "Link Clicked" },
+  { value: "email.complained", label: "Spam Complaint" },
+  { value: "email.deferred", label: "Email Deferred" },
+  { value: "email.failed", label: "Email Failed" },
+  { value: "server.online", label: "Server Online" },
+  { value: "server.offline", label: "Server Offline" },
+];
+
 function generateApiKey(): { full: string; prefix: string; hash: string } {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   let key = "ep_";
