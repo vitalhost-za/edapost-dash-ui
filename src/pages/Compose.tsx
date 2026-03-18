@@ -240,10 +240,39 @@ export default function Compose() {
     saveMutation.mutate(scheduleConfig.scheduledAt ? "scheduled" : "sending");
   };
 
+  // Parse recipients for preview picker
+  const parsedRecipients = useMemo(() => {
+    return toField
+      .split(/[,;\n]+/)
+      .map((e) => e.trim())
+      .filter(Boolean)
+      .map((entry) => {
+        const match = entry.match(/^(.+?)\s*<(.+@.+)>$/);
+        if (match) return { email: match[2].trim(), name: match[1].trim() };
+        if (entry.includes("@")) return { email: entry, name: "" };
+        return null;
+      })
+      .filter((r): r is { email: string; name: string } => r !== null);
+  }, [toField]);
+
+  const [previewRecipientIdx, setPreviewRecipientIdx] = useState(0);
+
+  const previewRecipient = parsedRecipients[previewRecipientIdx] || null;
+
   const previewHtml = useMemo(() => {
     if (!htmlBody.trim()) return "";
-    return htmlBody.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "");
-  }, [htmlBody]);
+    let html = htmlBody.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "");
+    if (previewRecipient) {
+      html = replaceMergeTags(html, previewRecipient);
+    }
+    return html;
+  }, [htmlBody, previewRecipient]);
+
+  const previewSubject = useMemo(() => {
+    if (!subject) return "";
+    if (previewRecipient) return replaceMergeTags(subject, previewRecipient);
+    return subject;
+  }, [subject, previewRecipient]);
 
   return (
     <DashboardLayout>
