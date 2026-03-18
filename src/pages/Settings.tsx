@@ -110,6 +110,15 @@ export default function SettingsPage() {
   const [generatedKey, setGeneratedKey] = useState<string | null>(null);
   const [deleteKeyId, setDeleteKeyId] = useState<string | null>(null);
 
+  // Webhook state
+  const [showWebhookDialog, setShowWebhookDialog] = useState(false);
+  const [editingWebhook, setEditingWebhook] = useState<WebhookEntry | null>(null);
+  const [webhookName, setWebhookName] = useState("");
+  const [webhookUrl, setWebhookUrl] = useState("");
+  const [webhookSecret, setWebhookSecret] = useState("");
+  const [webhookEvents, setWebhookEvents] = useState<string[]>([]);
+  const [deleteWebhookId, setDeleteWebhookId] = useState<string | null>(null);
+
   // Fetch profile
   const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: ["profile"],
