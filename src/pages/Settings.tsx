@@ -443,6 +443,7 @@ export default function SettingsPage() {
             <TabsTrigger value="auth" className="gap-1.5"><Shield className="h-3.5 w-3.5" /> Authentication</TabsTrigger>
             <TabsTrigger value="notifications" className="gap-1.5"><Bell className="h-3.5 w-3.5" /> Notifications</TabsTrigger>
             <TabsTrigger value="apikeys" className="gap-1.5"><Key className="h-3.5 w-3.5" /> API Keys</TabsTrigger>
+            <TabsTrigger value="webhooks" className="gap-1.5"><Webhook className="h-3.5 w-3.5" /> Webhooks</TabsTrigger>
           </TabsList>
 
           {/* Profile */}
