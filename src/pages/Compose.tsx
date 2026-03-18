@@ -13,6 +13,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChevronDown, Plus, Trash2, Monitor, Smartphone, Send, Loader2, Save, Upload, LayoutTemplate } from "lucide-react";
 import { CsvImport } from "@/components/CsvImport";
+import { CampaignScheduler } from "@/components/CampaignScheduler";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -32,7 +33,13 @@ export default function Compose() {
   const [headers, setHeaders] = useState([{ key: "", value: "" }]);
   const [openTracking, setOpenTracking] = useState(true);
   const [clickTracking, setClickTracking] = useState(true);
-  const [scheduledAt, setScheduledAt] = useState("");
+  const [scheduleConfig, setScheduleConfig] = useState({
+    scheduledAt: "",
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
+    recurrencePattern: "none",
+    recurrenceEndAt: "",
+    recurrenceCount: "",
+  });
   const [previewMode, setPreviewMode] = useState<"desktop" | "mobile">("desktop");
   const [serverId, setServerId] = useState("");
   const [domainId, setDomainId] = useState("");
@@ -104,7 +111,11 @@ export default function Compose() {
         open_tracking: openTracking,
         click_tracking: clickTracking,
         custom_headers: customHeaders.length > 0 ? customHeaders : [],
-        scheduled_at: scheduledAt ? new Date(scheduledAt).toISOString() : null,
+        scheduled_at: scheduleConfig.scheduledAt ? new Date(scheduleConfig.scheduledAt).toISOString() : null,
+        timezone: scheduleConfig.timezone,
+        recurrence_pattern: scheduleConfig.recurrencePattern !== "none" ? scheduleConfig.recurrencePattern : null,
+        recurrence_end_at: scheduleConfig.recurrenceEndAt ? new Date(scheduleConfig.recurrenceEndAt).toISOString() : null,
+        recurrence_count: scheduleConfig.recurrenceCount ? parseInt(scheduleConfig.recurrenceCount) : null,
         recipient_count: recipients.length,
         smtp_server_id: serverId || null,
         sending_domain_id: domainId || null,
@@ -167,7 +178,7 @@ export default function Compose() {
       toast.error("From, To, and Subject are required");
       return;
     }
-    saveMutation.mutate(scheduledAt ? "scheduled" : "sending");
+    saveMutation.mutate(scheduleConfig.scheduledAt ? "scheduled" : "sending");
   };
 
   const previewHtml = useMemo(() => {
@@ -345,19 +356,10 @@ export default function Compose() {
                       <Switch checked={clickTracking} onCheckedChange={setClickTracking} />
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs text-muted-foreground">Schedule Send</Label>
-                    <Input
-                      type="datetime-local"
-                      value={scheduledAt}
-                      onChange={(e) => setScheduledAt(e.target.value)}
-                    />
-                    {scheduledAt && (
-                      <p className="text-xs text-muted-foreground">
-                        Will be sent at {new Date(scheduledAt).toLocaleString()}
-                      </p>
-                    )}
-                  </div>
+                  <CampaignScheduler
+                    config={scheduleConfig}
+                    onChange={setScheduleConfig}
+                  />
                 </CollapsibleContent>
               </div>
             </Collapsible>
@@ -378,7 +380,7 @@ export default function Compose() {
                 onClick={handleSend}
               >
                 {saveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                {scheduledAt ? "Schedule" : "Send Now"}
+                {scheduleConfig.scheduledAt ? "Schedule" : "Send Now"}
               </Button>
             </div>
           </div>
