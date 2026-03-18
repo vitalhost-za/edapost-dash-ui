@@ -14,6 +14,77 @@ export type Database = {
   }
   public: {
     Tables: {
+      ab_test_variants: {
+        Row: {
+          bounced_count: number
+          campaign_id: string
+          clicked_count: number
+          created_at: string
+          delivered_count: number
+          from_address: string | null
+          html_body: string | null
+          id: string
+          is_winner: boolean
+          opened_count: number
+          plain_body: string | null
+          recipient_count: number
+          scheduled_at: string | null
+          sent_count: number
+          subject: string | null
+          updated_at: string
+          user_id: string
+          variant_label: string
+        }
+        Insert: {
+          bounced_count?: number
+          campaign_id: string
+          clicked_count?: number
+          created_at?: string
+          delivered_count?: number
+          from_address?: string | null
+          html_body?: string | null
+          id?: string
+          is_winner?: boolean
+          opened_count?: number
+          plain_body?: string | null
+          recipient_count?: number
+          scheduled_at?: string | null
+          sent_count?: number
+          subject?: string | null
+          updated_at?: string
+          user_id: string
+          variant_label?: string
+        }
+        Update: {
+          bounced_count?: number
+          campaign_id?: string
+          clicked_count?: number
+          created_at?: string
+          delivered_count?: number
+          from_address?: string | null
+          html_body?: string | null
+          id?: string
+          is_winner?: boolean
+          opened_count?: number
+          plain_body?: string | null
+          recipient_count?: number
+          scheduled_at?: string | null
+          sent_count?: number
+          subject?: string | null
+          updated_at?: string
+          user_id?: string
+          variant_label?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ab_test_variants_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       api_keys: {
         Row: {
           created_at: string
@@ -137,6 +208,8 @@ export type Database = {
       }
       campaigns: {
         Row: {
+          ab_test_enabled: boolean
+          ab_test_winner_variant_id: string | null
           bounced_count: number
           click_tracking: boolean
           clicked_count: number
@@ -170,6 +243,8 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          ab_test_enabled?: boolean
+          ab_test_winner_variant_id?: string | null
           bounced_count?: number
           click_tracking?: boolean
           clicked_count?: number
@@ -203,6 +278,8 @@ export type Database = {
           user_id: string
         }
         Update: {
+          ab_test_enabled?: boolean
+          ab_test_winner_variant_id?: string | null
           bounced_count?: number
           click_tracking?: boolean
           clicked_count?: number
@@ -236,6 +313,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "campaigns_ab_test_winner_variant_id_fkey"
+            columns: ["ab_test_winner_variant_id"]
+            isOneToOne: false
+            referencedRelation: "ab_test_variants"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "campaigns_parent_campaign_id_fkey"
             columns: ["parent_campaign_id"]

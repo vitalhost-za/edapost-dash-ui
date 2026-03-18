@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChevronDown, Plus, Trash2, Monitor, Smartphone, Send, Loader2, Save, Upload, LayoutTemplate } from "lucide-react";
 import { CsvImport } from "@/components/CsvImport";
 import { CampaignScheduler } from "@/components/CampaignScheduler";
+import { AbTestEditor, type AbVariant } from "@/components/AbTestEditor";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -43,6 +44,10 @@ export default function Compose() {
   const [previewMode, setPreviewMode] = useState<"desktop" | "mobile">("desktop");
   const [serverId, setServerId] = useState("");
   const [domainId, setDomainId] = useState("");
+
+  // A/B testing state
+  const [abTestEnabled, setAbTestEnabled] = useState(false);
+  const [abVariants, setAbVariants] = useState<AbVariant[]>([]);
 
   const { data: domains } = useQuery({
     queryKey: ["sending-domains"],
@@ -119,6 +124,7 @@ export default function Compose() {
         recipient_count: recipients.length,
         smtp_server_id: serverId || null,
         sending_domain_id: domainId || null,
+        ab_test_enabled: abTestEnabled,
       };
 
       const { data: campaign, error } = await supabase
@@ -142,8 +148,26 @@ export default function Compose() {
         if (recError) throw recError;
       }
 
-      // If sending, also queue the emails
-      if (status === "sending") {
+      // Insert A/B test variants if enabled
+      if (abTestEnabled && abVariants.length > 0) {
+        const variantRows = abVariants.map((v) => ({
+          campaign_id: campaign.id,
+          user_id: user!.id,
+          variant_label: v.label,
+          subject: v.subject || null,
+          html_body: v.htmlBody || null,
+          plain_body: v.plainBody || null,
+          from_address: v.fromAddress || null,
+          scheduled_at: v.scheduledAt ? new Date(v.scheduledAt).toISOString() : null,
+        }));
+        const { error: abError } = await supabase
+          .from("ab_test_variants")
+          .insert(variantRows);
+        if (abError) throw abError;
+      }
+
+      // If sending (non-A/B), also queue the emails
+      if (status === "sending" && !abTestEnabled) {
         const queueRows = recipients.map((r) => ({
           user_id: user!.id,
           from_address: fromAddress.trim(),
@@ -178,12 +202,15 @@ export default function Compose() {
       toast.error("From, To, and Subject are required");
       return;
     }
+    if (abTestEnabled && abVariants.length < 2) {
+      toast.error("A/B test requires at least 2 variants");
+      return;
+    }
     saveMutation.mutate(scheduleConfig.scheduledAt ? "scheduled" : "sending");
   };
 
   const previewHtml = useMemo(() => {
     if (!htmlBody.trim()) return "";
-    // Sanitize for iframe preview — strip scripts
     return htmlBody.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "");
   }, [htmlBody]);
 
@@ -295,7 +322,7 @@ export default function Compose() {
             <div className="bg-card border border-border rounded-lg p-5 space-y-4">
               <Tabs defaultValue="html">
                 <div className="flex items-center justify-between">
-                  <Label>Email Body</Label>
+                  <Label>Email Body {abTestEnabled && <span className="text-xs text-muted-foreground ml-1">(default — overridden by variants)</span>}</Label>
                   <TabsList className="h-8">
                     <TabsTrigger value="html" className="text-xs">HTML</TabsTrigger>
                     <TabsTrigger value="plain" className="text-xs">Plain Text</TabsTrigger>
@@ -318,6 +345,18 @@ export default function Compose() {
                 </TabsContent>
               </Tabs>
             </div>
+
+            {/* A/B Test Editor */}
+            <AbTestEditor
+              enabled={abTestEnabled}
+              onEnabledChange={setAbTestEnabled}
+              variants={abVariants}
+              onVariantsChange={setAbVariants}
+              baseSubject={subject}
+              baseHtmlBody={htmlBody}
+              basePlainBody={plainBody}
+              baseFromAddress={fromAddress}
+            />
 
             {/* Advanced Options */}
             <Collapsible>
