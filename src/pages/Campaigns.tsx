@@ -47,6 +47,21 @@ interface Campaign {
   timezone: string;
   recurrence_pattern: string | null;
   recurrence_end_at: string | null;
+  ab_test_enabled: boolean;
+}
+
+interface AbVariant {
+  id: string;
+  variant_label: string;
+  subject: string | null;
+  from_address: string | null;
+  recipient_count: number;
+  sent_count: number;
+  delivered_count: number;
+  bounced_count: number;
+  opened_count: number;
+  clicked_count: number;
+  is_winner: boolean;
 }
 
 const statusFilterOptions = ["all", "draft", "scheduled", "sending", "sent", "paused", "cancelled"] as const;
