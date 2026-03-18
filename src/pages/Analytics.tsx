@@ -1,132 +1,123 @@
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  BarChart, Bar, Cell,
+  BarChart, Bar,
 } from "recharts";
 
-const deliveryData = Array.from({ length: 30 }, (_, i) => ({
-  day: `${i + 1}`,
-  delivery: 96 + Math.random() * 3,
-  bounce: 0.5 + Math.random() * 1.5,
-  complaint: Math.random() * 0.1,
+const deliveryData = Array.from({ length: 14 }, (_, i) => ({
+  day: `Mar ${i + 1}`,
+  rate: 94 + Math.random() * 4,
+}));
+
+const bounceData = Array.from({ length: 14 }, (_, i) => ({
+  day: `Mar ${i + 1}`,
+  rate: 0.5 + Math.random() * 3,
 }));
 
 const domainData = [
-  { domain: "gmail.com", count: 4200 },
-  { domain: "outlook.com", count: 2800 },
-  { domain: "yahoo.com", count: 1500 },
-  { domain: "proton.me", count: 800 },
-  { domain: "icloud.com", count: 600 },
-  { domain: "other", count: 1100 },
+  { domain: "gmail.com", count: 4500 },
+  { domain: "outlook.com", count: 2600 },
+  { domain: "yahoo.com", count: 1400 },
+  { domain: "hotmail.com", count: 900 },
+  { domain: "icloud.com", count: 700 },
 ];
 
 const topBouncing = [
-  { domain: "old-isp.net", count: 45, rate: "8.2%" },
-  { domain: "defunct-mail.com", count: 32, rate: "12.5%" },
-  { domain: "legacy-corp.io", count: 21, rate: "5.1%" },
-  { domain: "temp-mail.xyz", count: 18, rate: "22.3%" },
-  { domain: "expired-host.org", count: 12, rate: "9.8%" },
+  { domain: "invalid.net", count: 45, rate: "12.3%" },
+  { domain: "expired.org", count: 28, rate: "8.7%" },
+  { domain: "old-isp.com", count: 15, rate: "5.2%" },
 ];
 
 const tooltipStyle = {
-  backgroundColor: "hsl(224, 18%, 10%)",
-  border: "1px solid hsl(224, 14%, 16%)",
+  backgroundColor: "hsl(var(--card))",
+  border: "1px solid hsl(var(--border))",
   borderRadius: 8,
   fontSize: 12,
+  color: "hsl(var(--foreground))",
 };
 
 export default function Analytics() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Analytics</h1>
-            <p className="text-sm text-muted-foreground mt-1">Deliverability metrics and domain insights.</p>
-          </div>
-          <Select defaultValue="30d">
-            <SelectTrigger className="w-[150px]"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="7d">Last 7 days</SelectItem>
-              <SelectItem value="30d">Last 30 days</SelectItem>
-              <SelectItem value="90d">Last 90 days</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        <h1 className="text-2xl font-bold tracking-tight">Analytics & Deliverability</h1>
 
-        {/* Rate charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {[
-            { title: "Delivery Rate %", key: "delivery" as const, color: "hsl(142, 71%, 45%)" },
-            { title: "Bounce Rate %", key: "bounce" as const, color: "hsl(0, 72%, 51%)" },
-            { title: "Complaint Rate %", key: "complaint" as const, color: "hsl(25, 95%, 53%)" },
-          ].map((chart) => (
-            <div key={chart.key} className="bg-card border border-border rounded-lg p-5">
-              <h3 className="text-sm font-medium text-muted-foreground mb-4">{chart.title}</h3>
-              <ResponsiveContainer width="100%" height={180}>
-                <LineChart data={deliveryData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(224, 14%, 16%)" />
-                  <XAxis dataKey="day" tick={{ fontSize: 10, fill: "hsl(220, 10%, 55%)" }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fontSize: 10, fill: "hsl(220, 10%, 55%)" }} axisLine={false} tickLine={false} />
-                  <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: "hsl(210, 20%, 92%)" }} />
-                  <Line type="monotone" dataKey={chart.key} stroke={chart.color} strokeWidth={2} dot={false} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          ))}
-        </div>
-
-        {/* Domain breakdown + Reputation */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* Delivery Rate */}
           <div className="bg-card border border-border rounded-lg p-5">
-            <h3 className="text-sm font-medium text-muted-foreground mb-4">Emails by Domain</h3>
-            <ResponsiveContainer width="100%" height={250}>
+            <h3 className="text-sm font-medium text-foreground mb-4">Delivery Rate Over Time</h3>
+            <ResponsiveContainer width="100%" height={200}>
+              <LineChart data={deliveryData}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                <XAxis dataKey="day" tick={{ fontSize: 10, className: "fill-muted-foreground" }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 10, className: "fill-muted-foreground" }} axisLine={false} tickLine={false} domain={[90, 100]} />
+                <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: "hsl(var(--foreground))" }} />
+                <Line type="monotone" dataKey="rate" stroke="hsl(142, 71%, 45%)" strokeWidth={2} dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Bounce Rate */}
+          <div className="bg-card border border-border rounded-lg p-5">
+            <h3 className="text-sm font-medium text-foreground mb-4">Bounce Rate Over Time</h3>
+            <ResponsiveContainer width="100%" height={200}>
+              <LineChart data={bounceData}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                <XAxis dataKey="day" tick={{ fontSize: 10, className: "fill-muted-foreground" }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 10, className: "fill-muted-foreground" }} axisLine={false} tickLine={false} />
+                <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: "hsl(var(--foreground))" }} />
+                <Line type="monotone" dataKey="rate" stroke="hsl(0, 72%, 51%)" strokeWidth={2} dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Emails by Domain */}
+          <div className="bg-card border border-border rounded-lg p-5">
+            <h3 className="text-sm font-medium text-foreground mb-4">Emails by Domain</h3>
+            <ResponsiveContainer width="100%" height={220}>
               <BarChart data={domainData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(224, 14%, 16%)" />
-                <XAxis dataKey="domain" tick={{ fontSize: 10, fill: "hsl(220, 10%, 55%)" }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 10, fill: "hsl(220, 10%, 55%)" }} axisLine={false} tickLine={false} />
-                <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: "hsl(210, 20%, 92%)" }} />
-                <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-                  {domainData.map((_, i) => (
-                    <Cell key={i} fill={`hsl(217, 91%, ${50 + i * 5}%)`} />
-                  ))}
-                </Bar>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                <XAxis dataKey="domain" tick={{ fontSize: 10, className: "fill-muted-foreground" }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 10, className: "fill-muted-foreground" }} axisLine={false} tickLine={false} />
+                <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: "hsl(var(--foreground))" }} />
+                <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
 
+          {/* Provider Reputation + Top Bouncing */}
           <div className="bg-card border border-border rounded-lg p-5">
-            <h3 className="text-sm font-medium text-muted-foreground mb-4">Provider Reputation</h3>
-            <div className="space-y-4">
+            <h3 className="text-sm font-medium text-foreground mb-4">Provider Reputation</h3>
+            <div className="space-y-3">
               <div className="bg-secondary rounded-md p-4 flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium">Gmail Postmaster Tools</p>
-                  <p className="text-xs text-muted-foreground">Domain reputation</p>
-                </div>
-                <span className="text-sm font-medium text-success">High</span>
+                <span className="text-sm">Gmail Postmaster Tools</span>
+                <span className="text-xs font-medium text-success bg-success/15 px-2 py-0.5 rounded">Good</span>
               </div>
               <div className="bg-secondary rounded-md p-4 flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium">Microsoft SNDS</p>
-                  <p className="text-xs text-muted-foreground">IP reputation status</p>
-                </div>
-                <span className="text-sm font-medium text-success">Normal</span>
+                <span className="text-sm">Microsoft SNDS</span>
+                <span className="text-xs font-medium text-success bg-success/15 px-2 py-0.5 rounded">Good</span>
               </div>
             </div>
 
-            <h3 className="text-sm font-medium text-muted-foreground mt-6 mb-3">Top Bouncing Domains</h3>
-            <div className="space-y-2">
-              {topBouncing.map((d) => (
-                <div key={d.domain} className="flex items-center justify-between py-2 border-b border-border last:border-0">
-                  <span className="text-sm font-mono">{d.domain}</span>
-                  <div className="flex items-center gap-4">
-                    <span className="text-xs text-muted-foreground">{d.count} bounces</span>
-                    <span className="text-xs font-medium text-destructive">{d.rate}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <h3 className="text-sm font-medium text-foreground mt-6 mb-3">Top Bouncing Domains</h3>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="pb-2 text-left text-xs font-medium text-muted-foreground">Domain</th>
+                  <th className="pb-2 text-left text-xs font-medium text-muted-foreground">Count</th>
+                  <th className="pb-2 text-left text-xs font-medium text-muted-foreground">Rate</th>
+                </tr>
+              </thead>
+              <tbody>
+                {topBouncing.map((d) => (
+                  <tr key={d.domain} className="border-b border-border last:border-0">
+                    <td className="py-2.5 text-sm">{d.domain}</td>
+                    <td className="py-2.5 text-sm text-muted-foreground">{d.count}</td>
+                    <td className="py-2.5 text-sm font-medium text-destructive">{d.rate}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>

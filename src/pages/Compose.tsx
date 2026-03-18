@@ -7,7 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ChevronDown, Plus, Trash2, Monitor, Smartphone, Send, Clock } from "lucide-react";
+import { ChevronDown, Plus, Trash2, Monitor, Smartphone, Send } from "lucide-react";
 import { useState } from "react";
 
 export default function Compose() {
@@ -17,10 +17,7 @@ export default function Compose() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Compose Email</h1>
-          <p className="text-sm text-muted-foreground mt-1">Create and send transactional or bulk emails.</p>
-        </div>
+        <h1 className="text-2xl font-bold tracking-tight">Compose Email</h1>
 
         <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
           {/* Form */}
@@ -32,14 +29,14 @@ export default function Compose() {
                   <Select>
                     <SelectTrigger><SelectValue placeholder="Select domain" /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="noreply@edapost.com">noreply@edapost.com</SelectItem>
-                      <SelectItem value="hello@company.com">hello@company.com</SelectItem>
+                      <SelectItem value="noreply@edapost.io">noreply@edapost.io</SelectItem>
+                      <SelectItem value="hello@edapost.io">hello@edapost.io</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
                   <Label>Reply-To</Label>
-                  <Input placeholder="reply@company.com" />
+                  <Input placeholder="reply@example.com" />
                 </div>
               </div>
               <div className="space-y-2">
@@ -48,7 +45,7 @@ export default function Compose() {
               </div>
               <div className="space-y-2">
                 <Label>Subject</Label>
-                <Input placeholder="Your email subject" />
+                <Input placeholder="Email subject line" />
               </div>
               <div className="space-y-2">
                 <Label>Template</Label>
@@ -67,14 +64,17 @@ export default function Compose() {
             <div className="bg-card border border-border rounded-lg p-5 space-y-4">
               <Tabs defaultValue="html">
                 <div className="flex items-center justify-between">
-                  <Label>Email Body</Label>
+                  <Label>Body</Label>
                   <TabsList className="h-8">
                     <TabsTrigger value="html" className="text-xs">HTML</TabsTrigger>
                     <TabsTrigger value="plain" className="text-xs">Plain Text</TabsTrigger>
                   </TabsList>
                 </div>
                 <TabsContent value="html">
-                  <Textarea placeholder="<html>..." className="min-h-[200px] font-mono text-sm" />
+                  <Textarea
+                    className="min-h-[200px] font-mono text-sm"
+                    defaultValue={`<html>\n  <body>\n    <h1>Hello!</h1>\n  </body>\n</html>`}
+                  />
                 </TabsContent>
                 <TabsContent value="plain">
                   <Textarea placeholder="Plain text content..." className="min-h-[200px] text-sm" />
@@ -90,7 +90,6 @@ export default function Compose() {
                   <ChevronDown className="h-4 w-4 text-muted-foreground" />
                 </CollapsibleTrigger>
                 <CollapsibleContent className="px-5 pb-5 space-y-5">
-                  {/* Custom Headers */}
                   <div className="space-y-3">
                     <Label className="text-xs text-muted-foreground">Custom Headers</Label>
                     {headers.map((h, i) => (
@@ -110,7 +109,6 @@ export default function Compose() {
                       <Plus className="h-3 w-3 mr-1" /> Add Header
                     </Button>
                   </div>
-
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="flex items-center justify-between bg-secondary rounded-md p-3">
                       <span className="text-sm">Open Tracking</span>
@@ -121,7 +119,6 @@ export default function Compose() {
                       <Switch />
                     </div>
                   </div>
-
                   <div className="space-y-2">
                     <Label className="text-xs text-muted-foreground">Schedule Send</Label>
                     <Input type="datetime-local" />
@@ -132,8 +129,7 @@ export default function Compose() {
 
             <div className="flex gap-3">
               <Button variant="outline" className="gap-2"><Send className="h-4 w-4" /> Send Test Email</Button>
-              <Button className="gap-2"><Send className="h-4 w-4" /> Send Now</Button>
-              <Button variant="secondary" className="gap-2"><Clock className="h-4 w-4" /> Schedule</Button>
+              <Button className="gap-2"><Send className="h-4 w-4" /> Send</Button>
             </div>
           </div>
 
@@ -159,7 +155,7 @@ export default function Compose() {
               </div>
               <div className={`bg-secondary rounded-md border border-border mx-auto ${previewMode === "mobile" ? "max-w-[320px]" : "w-full"}`}>
                 <div className="p-4 min-h-[400px] flex items-center justify-center">
-                  <p className="text-sm text-muted-foreground">Email preview will appear here</p>
+                  <p className="text-sm text-muted-foreground">Email preview will render here</p>
                 </div>
               </div>
             </div>

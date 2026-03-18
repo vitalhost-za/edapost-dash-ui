@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Trash2, RefreshCw, Copy, Eye, EyeOff } from "lucide-react";
+import { Plus, Trash2, RefreshCw, Copy } from "lucide-react";
 import { useState } from "react";
 
 const apiKeys = [
@@ -24,13 +24,10 @@ export default function SettingsPage() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
-          <p className="text-sm text-muted-foreground mt-1">Configure your EdaPost instance.</p>
-        </div>
+        <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
 
         <Tabs defaultValue="general">
-          <TabsList className="flex-wrap">
+          <TabsList>
             <TabsTrigger value="general">General</TabsTrigger>
             <TabsTrigger value="smtp">SMTP</TabsTrigger>
             <TabsTrigger value="auth">Authentication</TabsTrigger>
@@ -41,8 +38,8 @@ export default function SettingsPage() {
 
           <TabsContent value="general" className="mt-6">
             <div className="bg-card border border-border rounded-lg p-5 space-y-4 max-w-2xl">
-              <div className="space-y-2"><Label>System Name</Label><Input defaultValue="EdaPost" /></div>
-              <div className="space-y-2"><Label>Default From Address</Label><Input defaultValue="noreply@edapost.com" /></div>
+              <div className="space-y-2"><Label>System Name</Label><Input defaultValue="EdaPost Production" /></div>
+              <div className="space-y-2"><Label>Default From Address</Label><Input defaultValue="noreply@edapost.io" /></div>
               <div className="space-y-2">
                 <Label>Timezone</Label>
                 <Select defaultValue="utc">
@@ -61,7 +58,7 @@ export default function SettingsPage() {
 
           <TabsContent value="smtp" className="mt-6">
             <div className="bg-card border border-border rounded-lg p-5 space-y-4 max-w-2xl">
-              <div className="space-y-2"><Label>Hostname</Label><Input defaultValue="mail.edapost.com" /></div>
+              <div className="space-y-2"><Label>Hostname</Label><Input defaultValue="mail.edapost.io" /></div>
               <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2"><Label>Port 25</Label><Input defaultValue="25" /></div>
                 <div className="space-y-2"><Label>Port 465</Label><Input defaultValue="465" /></div>
@@ -162,7 +159,7 @@ export default function SettingsPage() {
               <div className="bg-card border border-border rounded-lg overflow-hidden">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-border bg-secondary/50">
+                    <tr className="border-b border-border">
                       <th className="p-3 text-left text-xs font-medium text-muted-foreground">Name</th>
                       <th className="p-3 text-left text-xs font-medium text-muted-foreground">Key</th>
                       <th className="p-3 text-left text-xs font-medium text-muted-foreground">Created</th>
