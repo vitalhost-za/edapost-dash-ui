@@ -14,6 +14,149 @@ export type Database = {
   }
   public: {
     Tables: {
+      campaign_recipients: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          email: string
+          error_message: string | null
+          id: string
+          name: string | null
+          sent_at: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          email: string
+          error_message?: string | null
+          id?: string
+          name?: string | null
+          sent_at?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          email?: string
+          error_message?: string | null
+          id?: string
+          name?: string | null
+          sent_at?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_recipients_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaigns: {
+        Row: {
+          bounced_count: number
+          click_tracking: boolean
+          clicked_count: number
+          completed_at: string | null
+          created_at: string
+          custom_headers: Json | null
+          delivered_count: number
+          from_address: string
+          html_body: string | null
+          id: string
+          name: string
+          open_tracking: boolean
+          opened_count: number
+          plain_body: string | null
+          recipient_count: number
+          reply_to: string | null
+          scheduled_at: string | null
+          sending_domain_id: string | null
+          sent_at: string | null
+          sent_count: number
+          smtp_server_id: string | null
+          status: string
+          subject: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bounced_count?: number
+          click_tracking?: boolean
+          clicked_count?: number
+          completed_at?: string | null
+          created_at?: string
+          custom_headers?: Json | null
+          delivered_count?: number
+          from_address: string
+          html_body?: string | null
+          id?: string
+          name: string
+          open_tracking?: boolean
+          opened_count?: number
+          plain_body?: string | null
+          recipient_count?: number
+          reply_to?: string | null
+          scheduled_at?: string | null
+          sending_domain_id?: string | null
+          sent_at?: string | null
+          sent_count?: number
+          smtp_server_id?: string | null
+          status?: string
+          subject: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          bounced_count?: number
+          click_tracking?: boolean
+          clicked_count?: number
+          completed_at?: string | null
+          created_at?: string
+          custom_headers?: Json | null
+          delivered_count?: number
+          from_address?: string
+          html_body?: string | null
+          id?: string
+          name?: string
+          open_tracking?: boolean
+          opened_count?: number
+          plain_body?: string | null
+          recipient_count?: number
+          reply_to?: string | null
+          scheduled_at?: string | null
+          sending_domain_id?: string | null
+          sent_at?: string | null
+          sent_count?: number
+          smtp_server_id?: string | null
+          status?: string
+          subject?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaigns_sending_domain_id_fkey"
+            columns: ["sending_domain_id"]
+            isOneToOne: false
+            referencedRelation: "sending_domains"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaigns_smtp_server_id_fkey"
+            columns: ["smtp_server_id"]
+            isOneToOne: false
+            referencedRelation: "smtp_servers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       delivery_stats: {
         Row: {
           bounced: number
