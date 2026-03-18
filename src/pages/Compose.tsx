@@ -189,6 +189,25 @@ export default function Compose() {
         <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
           {/* Form */}
           <div className="xl:col-span-3 space-y-5">
+            {/* Template selector */}
+            {emailTemplates && emailTemplates.length > 0 && (
+              <div className="bg-card border border-border rounded-lg p-4">
+                <div className="flex items-center gap-3">
+                  <LayoutTemplate className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <Select onValueChange={applyTemplate}>
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Load from template…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {emailTemplates.map((t) => (
+                        <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+
             <div className="bg-card border border-border rounded-lg p-5 space-y-4">
               <div className="space-y-2">
                 <Label>Campaign Name</Label>
