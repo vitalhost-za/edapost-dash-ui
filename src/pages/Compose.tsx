@@ -200,7 +200,6 @@ export default function Compose() {
                   }}
                 />
               </div>
-              </div>
               <div className="space-y-2">
                 <Label>Subject *</Label>
                 <Input placeholder="Email subject line" value={subject} onChange={(e) => setSubject(e.target.value)} />
