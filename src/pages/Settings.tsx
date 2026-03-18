@@ -579,6 +579,8 @@ export default function SettingsPage() {
             <TabsTrigger value="notifications" className="gap-1.5"><Bell className="h-3.5 w-3.5" /> Notifications</TabsTrigger>
             <TabsTrigger value="apikeys" className="gap-1.5"><Key className="h-3.5 w-3.5" /> API Keys</TabsTrigger>
             <TabsTrigger value="webhooks" className="gap-1.5"><Webhook className="h-3.5 w-3.5" /> Webhooks</TabsTrigger>
+            <TabsTrigger value="ratelimits" className="gap-1.5"><Gauge className="h-3.5 w-3.5" /> Rate Limits</TabsTrigger>
+            <TabsTrigger value="worker" className="gap-1.5"><Cog className="h-3.5 w-3.5" /> Worker</TabsTrigger>
           </TabsList>
 
           {/* Profile */}
