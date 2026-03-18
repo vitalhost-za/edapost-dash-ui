@@ -11,7 +11,8 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ChevronDown, Plus, Trash2, Monitor, Smartphone, Send, Loader2, Save } from "lucide-react";
+import { ChevronDown, Plus, Trash2, Monitor, Smartphone, Send, Loader2, Save, Upload } from "lucide-react";
+import { CsvImport } from "@/components/CsvImport";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -56,10 +57,17 @@ export default function Compose() {
 
   const saveMutation = useMutation({
     mutationFn: async (status: "draft" | "scheduled" | "sending") => {
-      const recipients = toField
+      const rawEntries = toField
         .split(/[,;\n]+/)
         .map((e) => e.trim())
-        .filter((e) => e.includes("@"));
+        .filter(Boolean);
+
+      const recipients = rawEntries.map((entry) => {
+        const match = entry.match(/^(.+?)\s*<(.+@.+)>$/);
+        if (match) return { email: match[2].trim(), name: match[1].trim() };
+        if (entry.includes("@")) return { email: entry, name: undefined };
+        return null;
+      }).filter((r): r is { email: string; name: string | undefined } => r !== null);
 
       const customHeaders = headers.filter((h) => h.key.trim() && h.value.trim());
 
@@ -90,10 +98,11 @@ export default function Compose() {
 
       // Insert recipients
       if (recipients.length > 0) {
-        const recipientRows = recipients.map((email) => ({
+        const recipientRows = recipients.map((r) => ({
           campaign_id: campaign.id,
           user_id: user!.id,
-          email,
+          email: r.email,
+          name: r.name || null,
         }));
         const { error: recError } = await supabase
           .from("campaign_recipients")
@@ -103,10 +112,10 @@ export default function Compose() {
 
       // If sending, also queue the emails
       if (status === "sending") {
-        const queueRows = recipients.map((email) => ({
+        const queueRows = recipients.map((r) => ({
           user_id: user!.id,
           from_address: fromAddress.trim(),
-          to_address: email,
+          to_address: r.email,
           subject: subject.trim(),
           smtp_server_id: serverId || null,
         }));
@@ -182,9 +191,22 @@ export default function Compose() {
                   onChange={(e) => setToField(e.target.value)}
                   className="min-h-[80px]"
                 />
-                <p className="text-xs text-muted-foreground">
-                  {toField.split(/[,;\n]+/).filter((e) => e.trim().includes("@")).length} recipient(s)
-                </p>
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-muted-foreground">
+                    {toField.split(/[,;\n]+/).filter((e) => e.trim().includes("@")).length} recipient(s)
+                  </p>
+                </div>
+                <CsvImport
+                  onImport={(recipients) => {
+                    const newEmails = recipients.map((r) =>
+                      r.name ? `${r.name} <${r.email}>` : r.email
+                    );
+                    setToField((prev) => {
+                      const existing = prev.trim();
+                      return existing ? `${existing}\n${newEmails.join("\n")}` : newEmails.join("\n");
+                    });
+                  }}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Subject *</Label>
