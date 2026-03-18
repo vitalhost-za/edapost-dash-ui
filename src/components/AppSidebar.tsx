@@ -17,7 +17,7 @@ const navItems = [
   { title: "Logs", url: "/logs", icon: ScrollText },
   { title: "Bounces", url: "/bounces", icon: AlertTriangle },
   { title: "Suppression List", url: "/suppression", icon: ShieldBan },
-  { title: "DNS Health", url: "/dns", icon: Dns },
+  { title: "DNS Health", url: "/dns", icon: Globe },
   { title: "Analytics", url: "/analytics", icon: BarChart3 },
   { title: "Settings", url: "/settings", icon: Settings },
 ];
