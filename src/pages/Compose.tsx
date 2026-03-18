@@ -253,7 +253,21 @@ export default function Compose() {
         if (abError) throw abError;
       }
 
-      // If sending (non-A/B), also queue the emails
+      // Save attachment records
+      const uploadedAttachments = attachments.filter((a) => a.storagePath && !a.error);
+      if (uploadedAttachments.length > 0) {
+        const attRows = uploadedAttachments.map((a) => ({
+          campaign_id: campaign.id,
+          user_id: user!.id,
+          file_name: a.file.name,
+          file_size: a.file.size,
+          content_type: a.file.type || "application/octet-stream",
+          storage_path: a.storagePath!,
+        }));
+        const { error: attError } = await supabase.from("campaign_attachments").insert(attRows);
+        if (attError) throw attError;
+      }
+
       if (status === "sending" && !abTestEnabled) {
         const queueRows = recipients.map((r) => ({
           user_id: user!.id,
