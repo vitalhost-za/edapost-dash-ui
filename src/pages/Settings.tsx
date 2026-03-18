@@ -802,7 +802,7 @@ export default function SettingsPage() {
                         <p className="text-xs text-muted-foreground">
                           Last triggered {formatDistanceToNow(new Date(w.last_triggered_at), { addSuffix: true })}
                           {w.last_status_code && (
-                            <span className={cn("ml-2", w.last_status_code < 300 ? "text-emerald-500" : "text-destructive")}>
+                            <span className={cn("ml-2", w.last_status_code < 300 ? "text-primary" : "text-destructive")}>
                               HTTP {w.last_status_code}
                             </span>
                           )}
