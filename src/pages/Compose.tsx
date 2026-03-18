@@ -55,6 +55,27 @@ export default function Compose() {
     },
   });
 
+  const { data: emailTemplates } = useQuery({
+    queryKey: ["email-templates-list"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("email_templates")
+        .select("id, name, subject, html_body, plain_body")
+        .order("name");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const applyTemplate = (templateId: string) => {
+    const tpl = emailTemplates?.find((t) => t.id === templateId);
+    if (!tpl) return;
+    if (tpl.subject) setSubject(tpl.subject);
+    setHtmlBody(tpl.html_body);
+    if (tpl.plain_body) setPlainBody(tpl.plain_body);
+    toast.success(`Template "${tpl.name}" applied`);
+  };
+
   const saveMutation = useMutation({
     mutationFn: async (status: "draft" | "scheduled" | "sending") => {
       const rawEntries = toField
