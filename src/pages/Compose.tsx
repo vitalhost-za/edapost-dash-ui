@@ -9,9 +9,10 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ChevronDown, Plus, Trash2, Monitor, Smartphone, Send, Loader2, Save, Upload, LayoutTemplate, Users } from "lucide-react";
+import { ChevronDown, Plus, Trash2, Monitor, Smartphone, Send, Loader2, Save, Upload, LayoutTemplate, Users, FlaskConical } from "lucide-react";
 import { CsvImport } from "@/components/CsvImport";
 import { CampaignScheduler } from "@/components/CampaignScheduler";
 import { AbTestEditor, type AbVariant } from "@/components/AbTestEditor";
@@ -224,6 +225,33 @@ export default function Compose() {
         toast.success("Campaign queued for sending");
       }
       navigate("/campaigns");
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  // Send test email
+  const [testEmailOpen, setTestEmailOpen] = useState(false);
+  const [testEmailAddress, setTestEmailAddress] = useState("");
+  const testEmailMutation = useMutation({
+    mutationFn: async () => {
+      const testRecipient = { email: testEmailAddress.trim(), name: "Test User" };
+      const { data, error } = await supabase.functions.invoke("send-test-email", {
+        body: {
+          to_address: testRecipient.email,
+          from_address: fromAddress.trim(),
+          subject: replaceMergeTags(subject.trim(), testRecipient),
+          html_body: replaceMergeTags(htmlBody, testRecipient),
+          plain_body: plainBody ? replaceMergeTags(plainBody, testRecipient) : null,
+          smtp_server_id: serverId || null,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: () => {
+      toast.success(`Test email queued to ${testEmailAddress}`);
+      setTestEmailOpen(false);
     },
     onError: (err: Error) => toast.error(err.message),
   });
@@ -486,7 +514,34 @@ export default function Compose() {
               </div>
             </Collapsible>
 
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-3">
+              <Dialog open={testEmailOpen} onOpenChange={setTestEmailOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="gap-2" disabled={!fromAddress.trim() || !subject.trim()}>
+                    <FlaskConical className="h-4 w-4" /> Send Test
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader><DialogTitle>Send Test Email</DialogTitle></DialogHeader>
+                  <p className="text-sm text-muted-foreground">
+                    Send a single test email with merge tags replaced using sample data (name: "Test User").
+                  </p>
+                  <div className="space-y-3 mt-2">
+                    <div className="space-y-1.5">
+                      <Label>Send to</Label>
+                      <Input placeholder="your@email.com" value={testEmailAddress} onChange={(e) => setTestEmailAddress(e.target.value)} />
+                    </div>
+                    <Button
+                      className="w-full gap-2"
+                      disabled={!testEmailAddress.trim().includes("@") || testEmailMutation.isPending}
+                      onClick={() => testEmailMutation.mutate()}
+                    >
+                      {testEmailMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                      Send Test Email
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
               <Button
                 variant="outline"
                 className="gap-2"
