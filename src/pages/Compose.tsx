@@ -356,19 +356,10 @@ export default function Compose() {
                       <Switch checked={clickTracking} onCheckedChange={setClickTracking} />
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs text-muted-foreground">Schedule Send</Label>
-                    <Input
-                      type="datetime-local"
-                      value={scheduledAt}
-                      onChange={(e) => setScheduledAt(e.target.value)}
-                    />
-                    {scheduledAt && (
-                      <p className="text-xs text-muted-foreground">
-                        Will be sent at {new Date(scheduledAt).toLocaleString()}
-                      </p>
-                    )}
-                  </div>
+                  <CampaignScheduler
+                    config={scheduleConfig}
+                    onChange={setScheduleConfig}
+                  />
                 </CollapsibleContent>
               </div>
             </Collapsible>
