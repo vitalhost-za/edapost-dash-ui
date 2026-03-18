@@ -1,3 +1,7 @@
+import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -5,21 +9,221 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Trash2, RefreshCw, Copy } from "lucide-react";
-import { useState } from "react";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Plus, Trash2, Copy, Loader2, Save, Key, Bell, Server, Settings2, Shield,
+  CheckCircle,
+} from "lucide-react";
+import { toast } from "sonner";
+import { formatDistanceToNow } from "date-fns";
+import { cn } from "@/lib/utils";
 
-const apiKeys = [
-  { id: "key_1", name: "Production", key: "ep_live_****...a3f2", created: "Jan 15, 2026", lastUsed: "2 hours ago", permissions: "Full Access" },
-  { id: "key_2", name: "Staging", key: "ep_test_****...b7c1", created: "Feb 28, 2026", lastUsed: "3 days ago", permissions: "Send Only" },
-];
+interface UserSettings {
+  id: string;
+  user_id: string;
+  system_name: string;
+  default_from_address: string;
+  timezone: string;
+  smtp_hostname: string | null;
+  smtp_port: number | null;
+  smtp_tls_mode: string;
+  smtp_max_message_size: number | null;
+  smtp_connection_limit: number | null;
+  slack_webhook_url: string | null;
+  alert_email: string | null;
+  alert_bounce_rate: number | null;
+  alert_complaint_rate: number | null;
+  alert_queue_depth: number | null;
+  notify_bounces: boolean;
+  notify_complaints: boolean;
+  notify_queue_full: boolean;
+  notify_server_down: boolean;
+  warmup_enabled: boolean;
+}
 
-const warmupSchedule = [
-  { day: 1, limit: 500 }, { day: 5, limit: 1000 }, { day: 10, limit: 2500 },
-  { day: 15, limit: 5000 }, { day: 20, limit: 10000 }, { day: 25, limit: 25000 }, { day: 30, limit: 50000 },
-];
+interface ApiKey {
+  id: string;
+  name: string;
+  key_prefix: string;
+  key_hash: string;
+  permissions: string;
+  last_used_at: string | null;
+  created_at: string;
+}
+
+function generateApiKey(): { full: string; prefix: string; hash: string } {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let key = "ep_";
+  for (let i = 0; i < 40; i++) key += chars[Math.floor(Math.random() * chars.length)];
+  return { full: key, prefix: key.substring(0, 10) + "****" + key.substring(key.length - 4), hash: btoa(key) };
+}
 
 export default function SettingsPage() {
-  const [warmupEnabled, setWarmupEnabled] = useState(true);
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  // Settings state
+  const [settings, setSettings] = useState<Partial<UserSettings>>({});
+  const [showNewKey, setShowNewKey] = useState(false);
+  const [newKeyName, setNewKeyName] = useState("");
+  const [newKeyPerms, setNewKeyPerms] = useState("full");
+  const [generatedKey, setGeneratedKey] = useState<string | null>(null);
+  const [deleteKeyId, setDeleteKeyId] = useState<string | null>(null);
+
+  // Fetch settings
+  const { data: savedSettings, isLoading: settingsLoading } = useQuery({
+    queryKey: ["user-settings"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("user_settings")
+        .select("*")
+        .maybeSingle();
+      if (error) throw error;
+      return data as UserSettings | null;
+    },
+  });
+
+  useEffect(() => {
+    if (savedSettings) setSettings(savedSettings);
+  }, [savedSettings]);
+
+  // Fetch API keys
+  const { data: apiKeys, isLoading: keysLoading } = useQuery({
+    queryKey: ["api-keys"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("api_keys")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data as ApiKey[];
+    },
+  });
+
+  // Fetch domains for auth tab
+  const { data: domains } = useQuery({
+    queryKey: ["sending-domains"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("sending_domains")
+        .select("domain, spf_status, dkim_status, dmarc_status, dkim_selector, verified");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  // Save settings
+  const saveMutation = useMutation({
+    mutationFn: async (partial: Partial<UserSettings>) => {
+      if (savedSettings?.id) {
+        const { error } = await supabase
+          .from("user_settings")
+          .update(partial)
+          .eq("id", savedSettings.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("user_settings")
+          .insert({ ...partial, user_id: user!.id } as any);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["user-settings"] });
+      toast.success("Settings saved");
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  // Create API key
+  const createKeyMutation = useMutation({
+    mutationFn: async () => {
+      const { full, prefix, hash } = generateApiKey();
+      const { error } = await supabase.from("api_keys").insert({
+        user_id: user!.id,
+        name: newKeyName.trim() || "Untitled",
+        key_prefix: prefix,
+        key_hash: hash,
+        permissions: newKeyPerms,
+      });
+      if (error) throw error;
+      return full;
+    },
+    onSuccess: (key) => {
+      queryClient.invalidateQueries({ queryKey: ["api-keys"] });
+      setGeneratedKey(key);
+      setNewKeyName("");
+      setNewKeyPerms("full");
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  // Delete API key
+  const deleteKeyMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("api_keys").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["api-keys"] });
+      setDeleteKeyId(null);
+      toast.success("API key deleted");
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const updateField = (key: string, value: unknown) => {
+    setSettings((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleSaveGeneral = () => saveMutation.mutate({
+    system_name: settings.system_name,
+    default_from_address: settings.default_from_address,
+    timezone: settings.timezone,
+  });
+
+  const handleSaveSmtp = () => saveMutation.mutate({
+    smtp_hostname: settings.smtp_hostname,
+    smtp_port: settings.smtp_port,
+    smtp_tls_mode: settings.smtp_tls_mode,
+    smtp_max_message_size: settings.smtp_max_message_size,
+    smtp_connection_limit: settings.smtp_connection_limit,
+  });
+
+  const handleSaveNotifications = () => saveMutation.mutate({
+    slack_webhook_url: settings.slack_webhook_url,
+    alert_email: settings.alert_email,
+    alert_bounce_rate: settings.alert_bounce_rate,
+    alert_complaint_rate: settings.alert_complaint_rate,
+    alert_queue_depth: settings.alert_queue_depth,
+    notify_bounces: settings.notify_bounces,
+    notify_complaints: settings.notify_complaints,
+    notify_queue_full: settings.notify_queue_full,
+    notify_server_down: settings.notify_server_down,
+  });
+
+  const handleSaveWarmup = () => saveMutation.mutate({
+    warmup_enabled: settings.warmup_enabled,
+  });
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success("Copied to clipboard");
+  };
+
+  if (settingsLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -27,170 +231,334 @@ export default function SettingsPage() {
         <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
 
         <Tabs defaultValue="general">
-          <TabsList>
-            <TabsTrigger value="general">General</TabsTrigger>
-            <TabsTrigger value="smtp">SMTP</TabsTrigger>
-            <TabsTrigger value="auth">Authentication</TabsTrigger>
-            <TabsTrigger value="warmup">Warmup</TabsTrigger>
-            <TabsTrigger value="notifications">Notifications</TabsTrigger>
-            <TabsTrigger value="apikeys">API Keys</TabsTrigger>
+          <TabsList className="flex-wrap">
+            <TabsTrigger value="general" className="gap-1.5"><Settings2 className="h-3.5 w-3.5" /> General</TabsTrigger>
+            <TabsTrigger value="smtp" className="gap-1.5"><Server className="h-3.5 w-3.5" /> SMTP</TabsTrigger>
+            <TabsTrigger value="auth" className="gap-1.5"><Shield className="h-3.5 w-3.5" /> Authentication</TabsTrigger>
+            <TabsTrigger value="notifications" className="gap-1.5"><Bell className="h-3.5 w-3.5" /> Notifications</TabsTrigger>
+            <TabsTrigger value="apikeys" className="gap-1.5"><Key className="h-3.5 w-3.5" /> API Keys</TabsTrigger>
           </TabsList>
 
+          {/* General */}
           <TabsContent value="general" className="mt-6">
             <div className="bg-card border border-border rounded-lg p-5 space-y-4 max-w-2xl">
-              <div className="space-y-2"><Label>System Name</Label><Input defaultValue="EdaPost Production" /></div>
-              <div className="space-y-2"><Label>Default From Address</Label><Input defaultValue="noreply@edapost.io" /></div>
+              <div className="space-y-2">
+                <Label>System Name</Label>
+                <Input value={settings.system_name ?? "EdaPost Production"} onChange={(e) => updateField("system_name", e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Default From Address</Label>
+                <Input value={settings.default_from_address ?? ""} onChange={(e) => updateField("default_from_address", e.target.value)} />
+              </div>
               <div className="space-y-2">
                 <Label>Timezone</Label>
-                <Select defaultValue="utc">
+                <Select value={settings.timezone ?? "UTC"} onValueChange={(v) => updateField("timezone", v)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="utc">UTC</SelectItem>
-                    <SelectItem value="est">America/New_York</SelectItem>
-                    <SelectItem value="pst">America/Los_Angeles</SelectItem>
-                    <SelectItem value="cet">Europe/Berlin</SelectItem>
+                    <SelectItem value="UTC">UTC</SelectItem>
+                    <SelectItem value="America/New_York">America/New_York</SelectItem>
+                    <SelectItem value="America/Chicago">America/Chicago</SelectItem>
+                    <SelectItem value="America/Los_Angeles">America/Los_Angeles</SelectItem>
+                    <SelectItem value="Europe/London">Europe/London</SelectItem>
+                    <SelectItem value="Europe/Berlin">Europe/Berlin</SelectItem>
+                    <SelectItem value="Asia/Tokyo">Asia/Tokyo</SelectItem>
+                    <SelectItem value="Asia/Shanghai">Asia/Shanghai</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <Button>Save Changes</Button>
+              <Button className="gap-2" onClick={handleSaveGeneral} disabled={saveMutation.isPending}>
+                {saveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                Save Changes
+              </Button>
             </div>
           </TabsContent>
 
+          {/* SMTP */}
           <TabsContent value="smtp" className="mt-6">
             <div className="bg-card border border-border rounded-lg p-5 space-y-4 max-w-2xl">
-              <div className="space-y-2"><Label>Hostname</Label><Input defaultValue="mail.edapost.io" /></div>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-2"><Label>Port 25</Label><Input defaultValue="25" /></div>
-                <div className="space-y-2"><Label>Port 465</Label><Input defaultValue="465" /></div>
-                <div className="space-y-2"><Label>Port 587</Label><Input defaultValue="587" /></div>
-              </div>
               <div className="space-y-2">
-                <Label>TLS Mode</Label>
-                <Select defaultValue="starttls">
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
-                    <SelectItem value="starttls">STARTTLS</SelectItem>
-                    <SelectItem value="tls">TLS</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label>Hostname</Label>
+                <Input value={settings.smtp_hostname ?? ""} onChange={(e) => updateField("smtp_hostname", e.target.value)} placeholder="mail.yourdomain.com" />
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2"><Label>Max Message Size (MB)</Label><Input defaultValue="25" /></div>
-                <div className="space-y-2"><Label>Connection Limit</Label><Input defaultValue="100" /></div>
+                <div className="space-y-2">
+                  <Label>Port</Label>
+                  <Input type="number" value={settings.smtp_port ?? 587} onChange={(e) => updateField("smtp_port", parseInt(e.target.value) || 587)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>TLS Mode</Label>
+                  <Select value={settings.smtp_tls_mode ?? "starttls"} onValueChange={(v) => updateField("smtp_tls_mode", v)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">None</SelectItem>
+                      <SelectItem value="starttls">STARTTLS</SelectItem>
+                      <SelectItem value="tls">TLS/SSL</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              <Button>Save Changes</Button>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Max Message Size (MB)</Label>
+                  <Input type="number" value={settings.smtp_max_message_size ?? 25} onChange={(e) => updateField("smtp_max_message_size", parseInt(e.target.value) || 25)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Connection Limit</Label>
+                  <Input type="number" value={settings.smtp_connection_limit ?? 100} onChange={(e) => updateField("smtp_connection_limit", parseInt(e.target.value) || 100)} />
+                </div>
+              </div>
+              <Button className="gap-2" onClick={handleSaveSmtp} disabled={saveMutation.isPending}>
+                {saveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                Save Changes
+              </Button>
             </div>
           </TabsContent>
 
+          {/* Authentication */}
           <TabsContent value="auth" className="mt-6">
             <div className="bg-card border border-border rounded-lg p-5 space-y-4 max-w-2xl">
-              <div className="bg-secondary rounded-md p-4 flex items-center justify-between">
-                <div><p className="text-sm font-medium">SPF</p><p className="text-xs text-muted-foreground font-mono mt-1">v=spf1 include:_spf.edapost.com ~all</p></div>
-                <span className="text-xs font-medium text-success">Configured</span>
-              </div>
-              <div className="bg-secondary rounded-md p-4 flex items-center justify-between">
-                <div><p className="text-sm font-medium">DKIM</p><p className="text-xs text-muted-foreground font-mono mt-1">Selector: edapost._domainkey</p></div>
-                <Button variant="outline" size="sm"><RefreshCw className="h-3 w-3 mr-1" /> Rotate Key</Button>
-              </div>
-              <div className="bg-secondary rounded-md p-4 flex items-center justify-between">
-                <div><p className="text-sm font-medium">DMARC</p><p className="text-xs text-muted-foreground font-mono mt-1">v=DMARC1; p=none</p></div>
-                <span className="text-xs font-medium text-warning">Weak Policy</span>
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="warmup" className="mt-6">
-            <div className="bg-card border border-border rounded-lg p-5 space-y-4 max-w-2xl">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium">IP Warmup</p>
-                  <p className="text-xs text-muted-foreground">Gradually increase sending volume for new IPs</p>
-                </div>
-                <Switch checked={warmupEnabled} onCheckedChange={setWarmupEnabled} />
-              </div>
-              {warmupEnabled && (
-                <>
-                  <div className="bg-secondary rounded-md p-4 flex items-center justify-between">
-                    <span className="text-sm">Current Day</span>
-                    <span className="text-sm font-semibold">Day 14</span>
+              <p className="text-sm text-muted-foreground">Email authentication status for your sending domains.</p>
+              {domains && domains.length > 0 ? (
+                domains.map((d) => (
+                  <div key={d.domain} className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-semibold">{d.domain}</h3>
+                      {d.verified ? (
+                        <span className="text-xs font-medium text-success bg-success/15 px-2 py-0.5 rounded flex items-center gap-1"><CheckCircle className="h-3 w-3" /> Verified</span>
+                      ) : (
+                        <span className="text-xs font-medium text-warning bg-warning/15 px-2 py-0.5 rounded">Unverified</span>
+                      )}
+                    </div>
+                    {[
+                      { label: "SPF", status: d.spf_status, hint: `v=spf1 include:_spf.${d.domain} ~all` },
+                      { label: "DKIM", status: d.dkim_status, hint: `Selector: ${d.dkim_selector || "default"}._domainkey.${d.domain}` },
+                      { label: "DMARC", status: d.dmarc_status, hint: `v=DMARC1; p=reject; rua=mailto:dmarc@${d.domain}` },
+                    ].map((rec) => (
+                      <div key={rec.label} className="bg-secondary rounded-md p-3 flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium">{rec.label}</p>
+                          <p className="text-xs text-muted-foreground font-mono mt-0.5">{rec.hint}</p>
+                        </div>
+                        <span className={cn(
+                          "text-xs font-medium px-2 py-0.5 rounded",
+                          rec.status === "valid" ? "text-success bg-success/15" :
+                          rec.status === "warning" ? "text-warning bg-warning/15" :
+                          "text-destructive bg-destructive/15"
+                        )}>
+                          {rec.status === "valid" ? "Configured" : rec.status === "warning" ? "Weak" : rec.status}
+                        </span>
+                      </div>
+                    ))}
                   </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b border-border">
-                          <th className="p-2 text-left text-xs font-medium text-muted-foreground">Day</th>
-                          <th className="p-2 text-left text-xs font-medium text-muted-foreground">Daily Limit</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {warmupSchedule.map((row) => (
-                          <tr key={row.day} className="border-b border-border">
-                            <td className="p-2">Day {row.day}</td>
-                            <td className="p-2"><Input className="w-32 h-8" defaultValue={row.limit} /></td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  <Button>Save Schedule</Button>
-                </>
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground py-4 text-center">No sending domains configured. Add domains in the DNS Health page.</p>
               )}
             </div>
           </TabsContent>
 
+          {/* Notifications */}
           <TabsContent value="notifications" className="mt-6">
-            <div className="bg-card border border-border rounded-lg p-5 space-y-4 max-w-2xl">
-              <div className="space-y-2"><Label>Slack Webhook URL</Label><Input placeholder="https://hooks.slack.com/services/..." /></div>
-              <div className="space-y-2"><Label>Alert Email</Label><Input placeholder="alerts@company.com" /></div>
-              <h3 className="text-sm font-medium mt-4">Alert Thresholds</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="space-y-2"><Label className="text-xs">Bounce Rate %</Label><Input defaultValue="5" /></div>
-                <div className="space-y-2"><Label className="text-xs">Complaint Rate %</Label><Input defaultValue="0.1" /></div>
-                <div className="space-y-2"><Label className="text-xs">Queue Depth</Label><Input defaultValue="10000" /></div>
+            <div className="bg-card border border-border rounded-lg p-5 space-y-5 max-w-2xl">
+              <div className="space-y-2">
+                <Label>Slack Webhook URL</Label>
+                <Input
+                  placeholder="https://hooks.slack.com/services/..."
+                  value={settings.slack_webhook_url ?? ""}
+                  onChange={(e) => updateField("slack_webhook_url", e.target.value)}
+                />
               </div>
-              <Button>Save Notifications</Button>
+              <div className="space-y-2">
+                <Label>Alert Email</Label>
+                <Input
+                  placeholder="alerts@company.com"
+                  value={settings.alert_email ?? ""}
+                  onChange={(e) => updateField("alert_email", e.target.value)}
+                />
+              </div>
+
+              <h3 className="text-sm font-medium pt-2">Notification Events</h3>
+              <div className="space-y-3">
+                {[
+                  { key: "notify_bounces", label: "Bounce alerts", desc: "Get notified when bounce rate exceeds threshold" },
+                  { key: "notify_complaints", label: "Complaint alerts", desc: "Get notified about spam complaints" },
+                  { key: "notify_queue_full", label: "Queue depth alerts", desc: "Alert when queue exceeds threshold" },
+                  { key: "notify_server_down", label: "Server down alerts", desc: "Alert when an SMTP server goes offline" },
+                ].map((n) => (
+                  <div key={n.key} className="flex items-center justify-between bg-secondary rounded-md p-3">
+                    <div>
+                      <p className="text-sm font-medium">{n.label}</p>
+                      <p className="text-xs text-muted-foreground">{n.desc}</p>
+                    </div>
+                    <Switch
+                      checked={(settings as any)[n.key] ?? true}
+                      onCheckedChange={(v) => updateField(n.key, v)}
+                    />
+                  </div>
+                ))}
+              </div>
+
+              <h3 className="text-sm font-medium pt-2">Alert Thresholds</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-xs">Bounce Rate %</Label>
+                  <Input type="number" step="0.1" value={settings.alert_bounce_rate ?? 5} onChange={(e) => updateField("alert_bounce_rate", parseFloat(e.target.value) || 5)} />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">Complaint Rate %</Label>
+                  <Input type="number" step="0.01" value={settings.alert_complaint_rate ?? 0.1} onChange={(e) => updateField("alert_complaint_rate", parseFloat(e.target.value) || 0.1)} />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">Queue Depth</Label>
+                  <Input type="number" value={settings.alert_queue_depth ?? 10000} onChange={(e) => updateField("alert_queue_depth", parseInt(e.target.value) || 10000)} />
+                </div>
+              </div>
+
+              <Button className="gap-2" onClick={handleSaveNotifications} disabled={saveMutation.isPending}>
+                {saveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                Save Notifications
+              </Button>
             </div>
           </TabsContent>
 
+          {/* API Keys */}
           <TabsContent value="apikeys" className="mt-6">
             <div className="space-y-4 max-w-3xl">
-              <Button className="gap-2"><Plus className="h-4 w-4" /> Create API Key</Button>
-              <div className="bg-card border border-border rounded-lg overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border">
-                      <th className="p-3 text-left text-xs font-medium text-muted-foreground">Name</th>
-                      <th className="p-3 text-left text-xs font-medium text-muted-foreground">Key</th>
-                      <th className="p-3 text-left text-xs font-medium text-muted-foreground">Created</th>
-                      <th className="p-3 text-left text-xs font-medium text-muted-foreground">Last Used</th>
-                      <th className="p-3 text-left text-xs font-medium text-muted-foreground">Permissions</th>
-                      <th className="p-3 text-left text-xs font-medium text-muted-foreground">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {apiKeys.map((k) => (
-                      <tr key={k.id} className="border-b border-border hover:bg-accent/30 transition-colors">
-                        <td className="p-3 font-medium">{k.name}</td>
-                        <td className="p-3 font-mono text-xs text-muted-foreground">{k.key}</td>
-                        <td className="p-3 text-muted-foreground text-xs">{k.created}</td>
-                        <td className="p-3 text-muted-foreground text-xs">{k.lastUsed}</td>
-                        <td className="p-3 text-xs">{k.permissions}</td>
-                        <td className="p-3">
-                          <div className="flex gap-2">
-                            <Button variant="ghost" size="icon" className="h-7 w-7"><Copy className="h-3 w-3" /></Button>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive"><Trash2 className="h-3 w-3" /></Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-muted-foreground">Manage API keys for programmatic access to your SMTP infrastructure.</p>
+                <Button className="gap-2" onClick={() => setShowNewKey(true)}>
+                  <Plus className="h-4 w-4" /> Create API Key
+                </Button>
               </div>
+
+              {keysLoading ? (
+                <div className="flex items-center justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+              ) : apiKeys && apiKeys.length > 0 ? (
+                <div className="bg-card border border-border rounded-lg overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border">
+                        <th className="p-3 text-left text-xs font-medium text-muted-foreground">Name</th>
+                        <th className="p-3 text-left text-xs font-medium text-muted-foreground">Key</th>
+                        <th className="p-3 text-left text-xs font-medium text-muted-foreground">Permissions</th>
+                        <th className="p-3 text-left text-xs font-medium text-muted-foreground">Created</th>
+                        <th className="p-3 text-left text-xs font-medium text-muted-foreground">Last Used</th>
+                        <th className="p-3 text-left text-xs font-medium text-muted-foreground">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {apiKeys.map((k) => (
+                        <tr key={k.id} className="border-b border-border hover:bg-accent/30 transition-colors">
+                          <td className="p-3 font-medium">{k.name}</td>
+                          <td className="p-3 font-mono text-xs text-muted-foreground">{k.key_prefix}</td>
+                          <td className="p-3">
+                            <span className={cn(
+                              "text-xs font-medium px-2 py-0.5 rounded",
+                              k.permissions === "full" ? "bg-primary/15 text-primary" :
+                              k.permissions === "send_only" ? "bg-warning/15 text-warning" :
+                              "bg-muted text-muted-foreground"
+                            )}>
+                              {k.permissions === "full" ? "Full Access" : k.permissions === "send_only" ? "Send Only" : "Read Only"}
+                            </span>
+                          </td>
+                          <td className="p-3 text-muted-foreground text-xs">{formatDistanceToNow(new Date(k.created_at), { addSuffix: true })}</td>
+                          <td className="p-3 text-muted-foreground text-xs">
+                            {k.last_used_at ? formatDistanceToNow(new Date(k.last_used_at), { addSuffix: true }) : "Never"}
+                          </td>
+                          <td className="p-3">
+                            <div className="flex gap-1">
+                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyToClipboard(k.key_prefix)}>
+                                <Copy className="h-3 w-3" />
+                              </Button>
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteKeyId(k.id)}>
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="bg-card border border-border rounded-lg flex flex-col items-center justify-center py-16 text-center">
+                  <div className="p-3 rounded-xl bg-muted mb-3"><Key className="h-6 w-6 text-muted-foreground" /></div>
+                  <p className="text-sm font-medium">No API keys</p>
+                  <p className="text-xs text-muted-foreground mt-1">Create an API key to integrate with your SMTP infrastructure.</p>
+                </div>
+              )}
             </div>
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Create API Key Dialog */}
+      <Dialog open={showNewKey} onOpenChange={(open) => { if (!open) { setShowNewKey(false); setGeneratedKey(null); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{generatedKey ? "API Key Created" : "Create API Key"}</DialogTitle>
+            <DialogDescription>
+              {generatedKey
+                ? "Copy this key now. It won't be shown again."
+                : "Give your API key a name and set permissions."}
+            </DialogDescription>
+          </DialogHeader>
+          {generatedKey ? (
+            <div className="space-y-4">
+              <div className="bg-secondary rounded-md p-4 font-mono text-sm break-all select-all">
+                {generatedKey}
+              </div>
+              <Button className="w-full gap-2" onClick={() => { copyToClipboard(generatedKey); setShowNewKey(false); setGeneratedKey(null); }}>
+                <Copy className="h-4 w-4" /> Copy & Close
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Name</Label>
+                <Input placeholder="e.g., Production" value={newKeyName} onChange={(e) => setNewKeyName(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Permissions</Label>
+                <Select value={newKeyPerms} onValueChange={setNewKeyPerms}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="full">Full Access</SelectItem>
+                    <SelectItem value="send_only">Send Only</SelectItem>
+                    <SelectItem value="read_only">Read Only</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setShowNewKey(false)}>Cancel</Button>
+                <Button onClick={() => createKeyMutation.mutate()} disabled={createKeyMutation.isPending} className="gap-2">
+                  {createKeyMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Key className="h-4 w-4" />}
+                  Generate Key
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Key Confirmation */}
+      <AlertDialog open={!!deleteKeyId} onOpenChange={() => setDeleteKeyId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Revoke this API key?</AlertDialogTitle>
+            <AlertDialogDescription>Any integrations using this key will stop working immediately.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteKeyId && deleteKeyMutation.mutate(deleteKeyId)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Revoke Key
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 }
