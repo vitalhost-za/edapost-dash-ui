@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/dialog";
 import {
   Plus, Megaphone, Search, Loader2, Trash2, Eye, Send, Pause, Play,
-  BarChart3, Users, Mail, CheckCircle,
+  BarChart3, Users, Mail, CheckCircle, FlaskConical, Trophy,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
