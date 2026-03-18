@@ -36,25 +36,63 @@ Deno.serve(async (req) => {
         .update({ status: "sending", sent_at: now })
         .eq("id", campaign.id);
 
-      // Queue emails for recipients
+      // Get recipients
       const { data: recipients } = await supabase
         .from("campaign_recipients")
         .select("email")
         .eq("campaign_id", campaign.id)
         .eq("status", "pending");
 
-      if (recipients && recipients.length > 0) {
-        const queueRows = recipients.map((r: { email: string }) => ({
-          user_id: campaign.user_id,
-          from_address: campaign.from_address,
-          to_address: r.email,
-          subject: campaign.subject,
-          smtp_server_id: campaign.smtp_server_id,
-        }));
-        await supabase.from("email_queue").insert(queueRows);
-      }
+      if (campaign.ab_test_enabled) {
+        // A/B test: get variants and split recipients evenly
+        const { data: variants } = await supabase
+          .from("ab_test_variants")
+          .select("*")
+          .eq("campaign_id", campaign.id)
+          .order("variant_label", { ascending: true });
 
-      results.push({ id: campaign.id, action: "started_sending" });
+        if (variants && variants.length > 0 && recipients && recipients.length > 0) {
+          const shuffled = [...recipients].sort(() => Math.random() - 0.5);
+          const chunkSize = Math.ceil(shuffled.length / variants.length);
+
+          for (let vi = 0; vi < variants.length; vi++) {
+            const variant = variants[vi];
+            const chunk = shuffled.slice(vi * chunkSize, (vi + 1) * chunkSize);
+
+            // Update variant recipient count
+            await supabase
+              .from("ab_test_variants")
+              .update({ recipient_count: chunk.length })
+              .eq("id", variant.id);
+
+            // Queue emails with variant-specific fields
+            const queueRows = chunk.map((r: { email: string }) => ({
+              user_id: campaign.user_id,
+              from_address: variant.from_address || campaign.from_address,
+              to_address: r.email,
+              subject: variant.subject || campaign.subject,
+              smtp_server_id: campaign.smtp_server_id,
+            }));
+            await supabase.from("email_queue").insert(queueRows);
+          }
+        }
+
+        results.push({ id: campaign.id, action: "ab_test_started" });
+      } else {
+        // Standard send (non-A/B)
+        if (recipients && recipients.length > 0) {
+          const queueRows = recipients.map((r: { email: string }) => ({
+            user_id: campaign.user_id,
+            from_address: campaign.from_address,
+            to_address: r.email,
+            subject: campaign.subject,
+            smtp_server_id: campaign.smtp_server_id,
+          }));
+          await supabase.from("email_queue").insert(queueRows);
+        }
+
+        results.push({ id: campaign.id, action: "started_sending" });
+      }
 
       // Handle recurring: create next occurrence
       if (campaign.recurrence_pattern && campaign.recurrence_pattern !== "none") {
@@ -97,6 +135,7 @@ Deno.serve(async (req) => {
                 parent_campaign_id: campaign.parent_campaign_id || campaign.id,
                 smtp_server_id: campaign.smtp_server_id,
                 sending_domain_id: campaign.sending_domain_id,
+                ab_test_enabled: campaign.ab_test_enabled,
               })
               .select("id")
               .single();
@@ -111,6 +150,28 @@ Deno.serve(async (req) => {
                   status: "pending",
                 }));
                 await supabase.from("campaign_recipients").insert(newRecipientRows);
+              }
+
+              // Clone A/B variants if enabled
+              if (campaign.ab_test_enabled) {
+                const { data: origVariants } = await supabase
+                  .from("ab_test_variants")
+                  .select("*")
+                  .eq("campaign_id", campaign.id);
+
+                if (origVariants && origVariants.length > 0) {
+                  const newVariants = origVariants.map((v: Record<string, unknown>) => ({
+                    campaign_id: newCampaign.id,
+                    user_id: campaign.user_id,
+                    variant_label: v.variant_label,
+                    subject: v.subject,
+                    html_body: v.html_body,
+                    plain_body: v.plain_body,
+                    from_address: v.from_address,
+                    scheduled_at: v.scheduled_at,
+                  }));
+                  await supabase.from("ab_test_variants").insert(newVariants);
+                }
               }
 
               // Update recipient_count
@@ -151,7 +212,6 @@ async function checkRecurrenceEligible(
   supabase: ReturnType<typeof createClient>,
   campaign: Record<string, unknown>
 ): Promise<boolean> {
-  // Check recurrence_count
   if (
     typeof campaign.recurrence_count === "number" &&
     campaign.recurrence_count <= 0
