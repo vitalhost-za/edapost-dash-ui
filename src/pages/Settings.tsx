@@ -131,6 +131,14 @@ export default function SettingsPage() {
   const [webhookEvents, setWebhookEvents] = useState<string[]>([]);
   const [deleteWebhookId, setDeleteWebhookId] = useState<string | null>(null);
 
+  // Rate limit state
+  const [showRateLimitDialog, setShowRateLimitDialog] = useState(false);
+  const [editingRateLimit, setEditingRateLimit] = useState<DomainRateLimit | null>(null);
+  const [rlDomain, setRlDomain] = useState("");
+  const [rlMaxPerMinute, setRlMaxPerMinute] = useState(10);
+  const [rlMaxPerHour, setRlMaxPerHour] = useState(200);
+  const [deleteRateLimitId, setDeleteRateLimitId] = useState<string | null>(null);
+
   // Fetch profile
   const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: ["profile"],
