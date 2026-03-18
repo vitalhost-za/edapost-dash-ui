@@ -80,6 +80,34 @@ export default function Compose() {
     },
   });
 
+  const { data: contactLists } = useQuery({
+    queryKey: ["contact-lists-for-compose"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("contact_lists")
+        .select("id, name, contact_count")
+        .order("name");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const loadContactList = async (listId: string) => {
+    const { data, error } = await supabase
+      .from("contact_list_members")
+      .select("email, name")
+      .eq("list_id", listId);
+    if (error) { toast.error(error.message); return; }
+    if (!data || data.length === 0) { toast.error("List is empty"); return; }
+    const newEmails = data.map((r: { email: string; name: string | null }) => r.name ? `${r.name} <${r.email}>` : r.email);
+    setToField((prev) => {
+      const existing = prev.trim();
+      return existing ? `${existing}\n${newEmails.join("\n")}` : newEmails.join("\n");
+    });
+    const list = contactLists?.find((l) => l.id === listId);
+    toast.success(`Loaded ${data.length} contacts from "${list?.name || "list"}"`);
+  };
+
   const applyTemplate = (templateId: string) => {
     const tpl = emailTemplates?.find((t) => t.id === templateId);
     if (!tpl) return;
