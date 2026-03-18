@@ -12,6 +12,7 @@ import edapostLogo from "@/assets/edapost-logo.png";
 
 const navItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
+  { title: "Servers", url: "/servers", icon: Server },
   { title: "Compose", url: "/compose", icon: PenSquare },
   { title: "Campaigns", url: "/campaigns", icon: Megaphone },
   { title: "Queue", url: "/queue", icon: ListOrdered },
