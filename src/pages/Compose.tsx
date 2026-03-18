@@ -33,7 +33,13 @@ export default function Compose() {
   const [headers, setHeaders] = useState([{ key: "", value: "" }]);
   const [openTracking, setOpenTracking] = useState(true);
   const [clickTracking, setClickTracking] = useState(true);
-  const [scheduledAt, setScheduledAt] = useState("");
+  const [scheduleConfig, setScheduleConfig] = useState({
+    scheduledAt: "",
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
+    recurrencePattern: "none",
+    recurrenceEndAt: "",
+    recurrenceCount: "",
+  });
   const [previewMode, setPreviewMode] = useState<"desktop" | "mobile">("desktop");
   const [serverId, setServerId] = useState("");
   const [domainId, setDomainId] = useState("");
