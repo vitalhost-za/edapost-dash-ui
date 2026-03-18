@@ -380,7 +380,7 @@ export default function Compose() {
                 onClick={handleSend}
               >
                 {saveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                {scheduledAt ? "Schedule" : "Send Now"}
+                {scheduleConfig.scheduledAt ? "Schedule" : "Send Now"}
               </Button>
             </div>
           </div>
