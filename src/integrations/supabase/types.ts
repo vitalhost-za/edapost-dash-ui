@@ -499,6 +499,60 @@ export type Database = {
           },
         ]
       }
+      domain_rate_limits: {
+        Row: {
+          created_at: string
+          domain: string
+          id: string
+          is_active: boolean
+          max_per_hour: number
+          max_per_minute: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          domain: string
+          id?: string
+          is_active?: boolean
+          max_per_hour?: number
+          max_per_minute?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          domain?: string
+          id?: string
+          is_active?: boolean
+          max_per_hour?: number
+          max_per_minute?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      domain_send_tracking: {
+        Row: {
+          domain: string
+          id: string
+          sent_at: string
+          user_id: string
+        }
+        Insert: {
+          domain: string
+          id?: string
+          sent_at?: string
+          user_id: string
+        }
+        Update: {
+          domain?: string
+          id?: string
+          sent_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       email_logs: {
         Row: {
           created_at: string
@@ -909,6 +963,8 @@ export type Database = {
           updated_at: string
           user_id: string
           warmup_enabled: boolean
+          worker_batch_size: number
+          worker_concurrency: number
         }
         Insert: {
           alert_bounce_rate?: number | null
@@ -933,6 +989,8 @@ export type Database = {
           updated_at?: string
           user_id: string
           warmup_enabled?: boolean
+          worker_batch_size?: number
+          worker_concurrency?: number
         }
         Update: {
           alert_bounce_rate?: number | null
@@ -957,6 +1015,8 @@ export type Database = {
           updated_at?: string
           user_id?: string
           warmup_enabled?: boolean
+          worker_batch_size?: number
+          worker_concurrency?: number
         }
         Relationships: []
       }
