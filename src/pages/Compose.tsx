@@ -183,8 +183,22 @@ export default function Compose() {
                   onChange={(e) => setToField(e.target.value)}
                   className="min-h-[80px]"
                 />
-                <p className="text-xs text-muted-foreground">
-                  {toField.split(/[,;\n]+/).filter((e) => e.trim().includes("@")).length} recipient(s)
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-muted-foreground">
+                    {toField.split(/[,;\n]+/).filter((e) => e.trim().includes("@")).length} recipient(s)
+                  </p>
+                </div>
+                <CsvImport
+                  onImport={(recipients) => {
+                    const newEmails = recipients.map((r) =>
+                      r.name ? `${r.name} <${r.email}>` : r.email
+                    );
+                    setToField((prev) => {
+                      const existing = prev.trim();
+                      return existing ? `${existing}\n${newEmails.join("\n")}` : newEmails.join("\n");
+                    });
+                  }}
+                />
                 </p>
               </div>
               <div className="space-y-2">
