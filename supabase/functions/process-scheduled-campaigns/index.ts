@@ -104,13 +104,11 @@ Deno.serve(async (req) => {
           );
 
           if (nextDate) {
-            // Check end date
             if (campaign.recurrence_end_at && nextDate > new Date(campaign.recurrence_end_at)) {
               results.push({ id: campaign.id, action: "recurrence_ended_by_date" });
               continue;
             }
 
-            // Clone campaign as scheduled for next occurrence
             const { data: newCampaign } = await supabase
               .from("campaigns")
               .insert({
@@ -141,7 +139,6 @@ Deno.serve(async (req) => {
               .single();
 
             if (newCampaign) {
-              // Clone recipients for the new campaign
               if (recipients && recipients.length > 0) {
                 const newRecipientRows = recipients.map((r: { email: string }) => ({
                   campaign_id: newCampaign.id,
@@ -152,7 +149,6 @@ Deno.serve(async (req) => {
                 await supabase.from("campaign_recipients").insert(newRecipientRows);
               }
 
-              // Clone A/B variants if enabled
               if (campaign.ab_test_enabled) {
                 const { data: origVariants } = await supabase
                   .from("ab_test_variants")
@@ -174,7 +170,6 @@ Deno.serve(async (req) => {
                 }
               }
 
-              // Update recipient_count
               await supabase
                 .from("campaigns")
                 .update({ recipient_count: recipients?.length || 0 })
@@ -187,7 +182,6 @@ Deno.serve(async (req) => {
             }
           }
 
-          // Mark last recurrence on original
           await supabase
             .from("campaigns")
             .update({ last_recurrence_at: now })
@@ -195,6 +189,10 @@ Deno.serve(async (req) => {
         }
       }
     }
+
+    // 2. Auto-select A/B test winners for completed "sending" campaigns
+    const winnerResults = await selectAbTestWinners(supabase);
+    results.push(...winnerResults);
 
     return new Response(
       JSON.stringify({ processed: results.length, results }),
@@ -207,6 +205,92 @@ Deno.serve(async (req) => {
     });
   }
 });
+
+async function selectAbTestWinners(
+  supabase: ReturnType<typeof createClient>
+): Promise<{ id: string; action: string }[]> {
+  const results: { id: string; action: string }[] = [];
+
+  // Find A/B-enabled campaigns that are "sending" and have no winner yet
+  const { data: abCampaigns, error } = await supabase
+    .from("campaigns")
+    .select("id, user_id")
+    .eq("ab_test_enabled", true)
+    .eq("status", "sending")
+    .is("ab_test_winner_variant_id", null);
+
+  if (error || !abCampaigns?.length) return results;
+
+  for (const campaign of abCampaigns) {
+    // Check if all queued emails for this campaign are done (no pending/queued)
+    const { count: pendingCount } = await supabase
+      .from("email_queue")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", campaign.user_id)
+      .in("status", ["queued", "processing"]);
+
+    // Only proceed if no emails are still in queue for this user
+    // (simplified check — in production you'd filter by campaign)
+    // More precise: check campaign_recipients
+    const { count: pendingRecipients } = await supabase
+      .from("campaign_recipients")
+      .select("id", { count: "exact", head: true })
+      .eq("campaign_id", campaign.id)
+      .eq("status", "pending");
+
+    if (pendingRecipients && pendingRecipients > 0) continue;
+
+    // All recipients processed — pick winner by highest click rate
+    const { data: variants } = await supabase
+      .from("ab_test_variants")
+      .select("id, variant_label, sent_count, clicked_count")
+      .eq("campaign_id", campaign.id)
+      .order("variant_label", { ascending: true });
+
+    if (!variants || variants.length === 0) continue;
+
+    // Calculate click rate for each variant
+    let winnerId: string | null = null;
+    let bestClickRate = -1;
+
+    for (const v of variants) {
+      const rate = v.sent_count > 0 ? v.clicked_count / v.sent_count : 0;
+      if (rate > bestClickRate) {
+        bestClickRate = rate;
+        winnerId = v.id;
+      }
+    }
+
+    if (winnerId) {
+      // Mark winner
+      await supabase
+        .from("ab_test_variants")
+        .update({ is_winner: true })
+        .eq("id", winnerId);
+
+      // Clear any previous winners for this campaign
+      await supabase
+        .from("ab_test_variants")
+        .update({ is_winner: false })
+        .eq("campaign_id", campaign.id)
+        .neq("id", winnerId);
+
+      // Update campaign with winner and mark as sent
+      await supabase
+        .from("campaigns")
+        .update({
+          ab_test_winner_variant_id: winnerId,
+          status: "sent",
+          completed_at: new Date().toISOString(),
+        })
+        .eq("id", campaign.id);
+
+      results.push({ id: campaign.id, action: `ab_winner_selected:${winnerId}` });
+    }
+  }
+
+  return results;
+}
 
 async function checkRecurrenceEligible(
   supabase: ReturnType<typeof createClient>,
