@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      api_keys: {
+        Row: {
+          created_at: string
+          id: string
+          key_hash: string
+          key_prefix: string
+          last_used_at: string | null
+          name: string
+          permissions: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          key_hash: string
+          key_prefix: string
+          last_used_at?: string | null
+          name: string
+          permissions?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          key_hash?: string
+          key_prefix?: string
+          last_used_at?: string | null
+          name?: string
+          permissions?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       bounces: {
         Row: {
           attempts: number
@@ -583,6 +616,81 @@ export type Database = {
           id?: string
           reason?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      user_settings: {
+        Row: {
+          alert_bounce_rate: number | null
+          alert_complaint_rate: number | null
+          alert_email: string | null
+          alert_queue_depth: number | null
+          created_at: string
+          default_from_address: string
+          id: string
+          notify_bounces: boolean
+          notify_complaints: boolean
+          notify_queue_full: boolean
+          notify_server_down: boolean
+          slack_webhook_url: string | null
+          smtp_connection_limit: number | null
+          smtp_hostname: string | null
+          smtp_max_message_size: number | null
+          smtp_port: number | null
+          smtp_tls_mode: string
+          system_name: string
+          timezone: string
+          updated_at: string
+          user_id: string
+          warmup_enabled: boolean
+        }
+        Insert: {
+          alert_bounce_rate?: number | null
+          alert_complaint_rate?: number | null
+          alert_email?: string | null
+          alert_queue_depth?: number | null
+          created_at?: string
+          default_from_address?: string
+          id?: string
+          notify_bounces?: boolean
+          notify_complaints?: boolean
+          notify_queue_full?: boolean
+          notify_server_down?: boolean
+          slack_webhook_url?: string | null
+          smtp_connection_limit?: number | null
+          smtp_hostname?: string | null
+          smtp_max_message_size?: number | null
+          smtp_port?: number | null
+          smtp_tls_mode?: string
+          system_name?: string
+          timezone?: string
+          updated_at?: string
+          user_id: string
+          warmup_enabled?: boolean
+        }
+        Update: {
+          alert_bounce_rate?: number | null
+          alert_complaint_rate?: number | null
+          alert_email?: string | null
+          alert_queue_depth?: number | null
+          created_at?: string
+          default_from_address?: string
+          id?: string
+          notify_bounces?: boolean
+          notify_complaints?: boolean
+          notify_queue_full?: boolean
+          notify_server_down?: boolean
+          slack_webhook_url?: string | null
+          smtp_connection_limit?: number | null
+          smtp_hostname?: string | null
+          smtp_max_message_size?: number | null
+          smtp_port?: number | null
+          smtp_tls_mode?: string
+          system_name?: string
+          timezone?: string
+          updated_at?: string
+          user_id?: string
+          warmup_enabled?: boolean
         }
         Relationships: []
       }
