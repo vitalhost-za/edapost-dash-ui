@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, PenSquare, Megaphone, ListOrdered,
-  ScrollText, AlertTriangle, ShieldBan, Globe, BarChart3, Settings
+  ScrollText, AlertTriangle, ShieldBan, Globe, BarChart3, Settings, Mail
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -8,6 +8,7 @@ import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar,
 } from "@/components/ui/sidebar";
+import edapostLogo from "@/assets/edapost-logo.png";
 
 const navItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
@@ -29,9 +30,9 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon" className="border-r border-border">
-      <div className="flex items-center gap-2 px-4 py-5 border-b border-border">
-        <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0">
-          <span className="text-primary-foreground font-bold text-sm">EP</span>
+      <div className="flex items-center gap-2.5 px-4 py-4 border-b border-border">
+        <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0">
+          <Mail className="h-5 w-5 text-primary" />
         </div>
         {!collapsed && (
           <span className="text-lg font-bold tracking-tight text-foreground">
@@ -49,7 +50,7 @@ export function AppSidebar() {
                     <NavLink
                       to={item.url}
                       end={item.url === "/"}
-                      className="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                      className="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-sidebar-foreground hover:text-foreground hover:bg-sidebar-accent transition-colors"
                       activeClassName="bg-primary/10 text-primary font-medium"
                     >
                       <item.icon className="h-4 w-4 shrink-0" />
