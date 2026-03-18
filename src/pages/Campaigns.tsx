@@ -226,6 +226,11 @@ export default function Campaigns() {
                             status={campaignStatusMap[campaign.status] || "queued"}
                             label={campaign.status}
                           />
+                          {campaign.ab_test_enabled && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+                              <FlaskConical className="h-3 w-3" /> A/B
+                            </span>
+                          )}
                         </div>
                         <p className="text-xs text-muted-foreground mt-0.5 truncate">
                           {campaign.subject} · {campaign.from_address}
