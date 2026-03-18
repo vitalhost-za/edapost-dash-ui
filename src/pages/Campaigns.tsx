@@ -384,3 +384,130 @@ export default function Campaigns() {
     </DashboardLayout>
   );
 }
+
+function CampaignDetailContent({ campaign }: { campaign: Campaign }) {
+  const { data: variants } = useQuery({
+    queryKey: ["ab-variants", campaign.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("ab_test_variants")
+        .select("*")
+        .eq("campaign_id", campaign.id)
+        .order("variant_label", { ascending: true });
+      if (error) throw error;
+      return data as AbVariant[];
+    },
+    enabled: campaign.ab_test_enabled,
+  });
+
+  const pct = (num: number, den: number) => den > 0 ? ((num / den) * 100).toFixed(1) : "0.0";
+
+  return (
+    <div className="space-y-4 mt-2">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[
+          { label: "Recipients", value: campaign.recipient_count },
+          { label: "Sent", value: campaign.sent_count },
+          { label: "Delivered", value: campaign.delivered_count },
+          { label: "Bounced", value: campaign.bounced_count },
+        ].map((s) => (
+          <div key={s.label} className="bg-secondary rounded-md p-3 text-center">
+            <p className="text-xs text-muted-foreground">{s.label}</p>
+            <p className="text-lg font-bold">{s.value}</p>
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="bg-secondary rounded-md p-3 text-center">
+          <p className="text-xs text-muted-foreground">Open Rate</p>
+          <p className="text-lg font-bold">{pct(campaign.opened_count, campaign.sent_count)}%</p>
+        </div>
+        <div className="bg-secondary rounded-md p-3 text-center">
+          <p className="text-xs text-muted-foreground">Click Rate</p>
+          <p className="text-lg font-bold">{pct(campaign.clicked_count, campaign.sent_count)}%</p>
+        </div>
+      </div>
+
+      {/* A/B Test Variant Results */}
+      {campaign.ab_test_enabled && variants && variants.length > 0 && (
+        <div>
+          <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1.5">
+            <FlaskConical className="h-3.5 w-3.5" /> A/B Test Results
+          </p>
+          <div className="space-y-2">
+            {variants.map((v) => {
+              const clickRate = v.sent_count > 0 ? +((v.clicked_count / v.sent_count) * 100).toFixed(1) : 0;
+              const openRate = v.sent_count > 0 ? +((v.opened_count / v.sent_count) * 100).toFixed(1) : 0;
+              const deliveryRate = v.sent_count > 0 ? +((v.delivered_count / v.sent_count) * 100).toFixed(1) : 0;
+
+              return (
+                <div
+                  key={v.id}
+                  className={cn(
+                    "border rounded-md p-3",
+                    v.is_winner ? "border-success bg-success/5" : "border-border"
+                  )}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className={cn(
+                        "w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold",
+                        v.variant_label === "A" ? "bg-primary text-primary-foreground" :
+                        v.variant_label === "B" ? "bg-success text-success-foreground" :
+                        "bg-warning text-warning-foreground"
+                      )}>
+                        {v.variant_label}
+                      </span>
+                      <span className="text-sm font-medium">Variant {v.variant_label}</span>
+                      {v.is_winner && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-success">
+                          <Trophy className="h-3 w-3" /> Winner
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-xs text-muted-foreground">{v.recipient_count} recipients</span>
+                  </div>
+                  {v.subject && (
+                    <p className="text-xs text-muted-foreground mb-2 truncate">Subject: {v.subject}</p>
+                  )}
+                  <div className="grid grid-cols-4 gap-2 text-center">
+                    <div>
+                      <p className="text-[10px] text-muted-foreground">Sent</p>
+                      <p className="text-sm font-semibold">{v.sent_count}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-muted-foreground">Delivery</p>
+                      <p className="text-sm font-semibold">{deliveryRate}%</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-muted-foreground">Opens</p>
+                      <p className="text-sm font-semibold">{openRate}%</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-muted-foreground">Clicks</p>
+                      <p className="text-sm font-semibold text-primary">{clickRate}%</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {campaign.html_body && (
+        <div>
+          <p className="text-xs font-medium text-muted-foreground mb-2">Email Preview</p>
+          <div className="bg-white rounded-md border border-border overflow-hidden">
+            <iframe
+              srcDoc={campaign.html_body}
+              className="w-full min-h-[300px] border-0"
+              title="Campaign Preview"
+              sandbox="allow-same-origin"
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
