@@ -890,6 +890,77 @@ export default function SettingsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Webhook Create/Edit Dialog */}
+      <Dialog open={showWebhookDialog} onOpenChange={(open) => { if (!open) resetWebhookForm(); }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{editingWebhook ? "Edit Webhook" : "Add Webhook"}</DialogTitle>
+            <DialogDescription>
+              {editingWebhook ? "Update your webhook endpoint configuration." : "Configure an endpoint to receive event notifications via HTTP POST."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Name</Label>
+              <Input placeholder="e.g., Analytics Service" value={webhookName} onChange={(e) => setWebhookName(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Endpoint URL</Label>
+              <Input placeholder="https://api.example.com/webhooks" value={webhookUrl} onChange={(e) => setWebhookUrl(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Signing Secret <span className="text-muted-foreground text-xs font-normal">(optional)</span></Label>
+              <Input placeholder="whsec_..." value={webhookSecret} onChange={(e) => setWebhookSecret(e.target.value)} />
+              <p className="text-xs text-muted-foreground">Used to verify webhook payloads via HMAC-SHA256 signature.</p>
+            </div>
+            <div className="space-y-2">
+              <Label>Events</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {WEBHOOK_EVENTS.map((ev) => (
+                  <label key={ev.value} className="flex items-center gap-2 bg-secondary rounded-md px-3 py-2 cursor-pointer hover:bg-accent/50 transition-colors">
+                    <Checkbox
+                      checked={webhookEvents.includes(ev.value)}
+                      onCheckedChange={() => toggleWebhookEvent(ev.value)}
+                    />
+                    <span className="text-sm">{ev.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={resetWebhookForm}>Cancel</Button>
+            <Button
+              onClick={() => saveWebhookMutation.mutate()}
+              disabled={saveWebhookMutation.isPending || !webhookUrl.trim() || webhookEvents.length === 0}
+              className="gap-2"
+            >
+              {saveWebhookMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              {editingWebhook ? "Update Webhook" : "Create Webhook"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Webhook Confirmation */}
+      <AlertDialog open={!!deleteWebhookId} onOpenChange={() => setDeleteWebhookId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this webhook?</AlertDialogTitle>
+            <AlertDialogDescription>This endpoint will no longer receive event notifications.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteWebhookId && deleteWebhookMutation.mutate(deleteWebhookId)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete Webhook
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 }
