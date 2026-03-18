@@ -963,6 +963,113 @@ export default function SettingsPage() {
               )}
             </div>
           </TabsContent>
+
+          {/* Rate Limits */}
+          <TabsContent value="ratelimits" className="mt-6">
+            <div className="space-y-4 max-w-3xl">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Configure per-domain sending rate limits to protect your sender reputation.</p>
+                  <p className="text-xs text-muted-foreground mt-1">Use <code className="bg-secondary px-1 rounded">*</code> as domain to set a default limit for all domains.</p>
+                </div>
+                <Button className="gap-2" onClick={() => { resetRateLimitForm(); setShowRateLimitDialog(true); }}>
+                  <Plus className="h-4 w-4" /> Add Rate Limit
+                </Button>
+              </div>
+
+              {rateLimitsLoading ? (
+                <div className="flex items-center justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+              ) : rateLimits && rateLimits.length > 0 ? (
+                <div className="bg-card border border-border rounded-lg overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border">
+                        <th className="p-3 text-left text-xs font-medium text-muted-foreground">Domain</th>
+                        <th className="p-3 text-center text-xs font-medium text-muted-foreground">Per Minute</th>
+                        <th className="p-3 text-center text-xs font-medium text-muted-foreground">Per Hour</th>
+                        <th className="p-3 text-center text-xs font-medium text-muted-foreground">Active</th>
+                        <th className="p-3 text-left text-xs font-medium text-muted-foreground">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rateLimits.map((rl) => (
+                        <tr key={rl.id} className="border-b border-border hover:bg-accent/30 transition-colors">
+                          <td className="p-3 font-medium font-mono text-xs">{rl.domain}</td>
+                          <td className="p-3 text-center">{rl.max_per_minute}</td>
+                          <td className="p-3 text-center">{rl.max_per_hour}</td>
+                          <td className="p-3 text-center">
+                            <Switch
+                              checked={rl.is_active}
+                              onCheckedChange={(v) => toggleRateLimitMutation.mutate({ id: rl.id, is_active: v })}
+                            />
+                          </td>
+                          <td className="p-3">
+                            <div className="flex gap-1">
+                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditRateLimit(rl)}>
+                                <Pencil className="h-3 w-3" />
+                              </Button>
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteRateLimitId(rl.id)}>
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="bg-card border border-border rounded-lg flex flex-col items-center justify-center py-16 text-center">
+                  <div className="p-3 rounded-xl bg-muted mb-3"><Gauge className="h-6 w-6 text-muted-foreground" /></div>
+                  <p className="text-sm font-medium">No rate limits configured</p>
+                  <p className="text-xs text-muted-foreground mt-1">Add per-domain limits to control sending speed and protect your reputation.</p>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
+          {/* Worker Configuration */}
+          <TabsContent value="worker" className="mt-6">
+            <div className="bg-card border border-border rounded-lg p-5 space-y-4 max-w-2xl">
+              <p className="text-sm text-muted-foreground">Configure the SMTP worker that processes your email queue.</p>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Worker Concurrency</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={50}
+                    value={settings.worker_concurrency ?? 5}
+                    onChange={(e) => updateField("worker_concurrency", parseInt(e.target.value) || 5)}
+                  />
+                  <p className="text-xs text-muted-foreground">Number of emails sent simultaneously per batch cycle.</p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Batch Size</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={100}
+                    value={settings.worker_batch_size ?? 20}
+                    onChange={(e) => updateField("worker_batch_size", parseInt(e.target.value) || 20)}
+                  />
+                  <p className="text-xs text-muted-foreground">Max emails to pick up from the queue per worker run.</p>
+                </div>
+              </div>
+              <div className="bg-secondary rounded-md p-3 space-y-1">
+                <p className="text-sm font-medium">Retry Strategy</p>
+                <p className="text-xs text-muted-foreground">
+                  Failed emails are retried with exponential backoff: 30s → 60s → 120s → 240s.
+                  After {settings.smtp_connection_limit ? "5" : "5"} failed attempts, emails are marked as permanently failed.
+                  Hard bounces (550/553/554) are never retried.
+                </p>
+              </div>
+              <Button className="gap-2" onClick={handleSaveWorker} disabled={saveMutation.isPending}>
+                {saveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                Save Worker Config
+              </Button>
+            </div>
+          </TabsContent>
         </Tabs>
       </div>
 
