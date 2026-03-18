@@ -158,6 +158,12 @@ async function dispatchWebhooks(
         headers["X-EdaPost-Signature"] = `sha256=${signature}`;
       }
 
+      const startTime = Date.now();
+      let statusCode: number | null = null;
+      let responseBody = "";
+      let success = false;
+      let errorMessage: string | null = null;
+
       try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
@@ -170,11 +176,14 @@ async function dispatchWebhooks(
         });
         clearTimeout(timeoutId);
 
-        // Consume response body
-        await response.text();
+        responseBody = await response.text();
+        statusCode = response.status;
+        success = statusCode >= 200 && statusCode < 300;
 
-        const statusCode = response.status;
-        const success = statusCode >= 200 && statusCode < 300;
+        // Truncate response body for storage
+        if (responseBody.length > 2000) {
+          responseBody = responseBody.substring(0, 2000) + "...[truncated]";
+        }
 
         // Update webhook status
         await supabase
@@ -183,7 +192,6 @@ async function dispatchWebhooks(
             last_triggered_at: new Date().toISOString(),
             last_status_code: statusCode,
             failure_count: success ? 0 : failureCount + 1,
-            // Auto-disable after 10 consecutive failures
             ...(failureCount + 1 >= 10 && !success ? { is_active: false } : {}),
           })
           .eq("id", webhookId);
@@ -191,6 +199,7 @@ async function dispatchWebhooks(
         results.push({ webhook_id: webhookId, success, status_code: statusCode });
       } catch (err: unknown) {
         console.error(`Webhook ${webhookId} delivery failed:`, err);
+        errorMessage = err instanceof Error ? err.message : "Unknown error";
 
         await supabase
           .from("webhooks")
@@ -204,6 +213,22 @@ async function dispatchWebhooks(
 
         results.push({ webhook_id: webhookId, success: false, status_code: null });
       }
+
+      const durationMs = Date.now() - startTime;
+
+      // Log the delivery attempt
+      await supabase.from("webhook_deliveries").insert({
+        webhook_id: webhookId,
+        user_id: userId,
+        event_type: eventType,
+        payload,
+        status_code: statusCode,
+        response_body: responseBody || null,
+        duration_ms: durationMs,
+        success,
+        error_message: errorMessage,
+        attempt_number: success ? 1 : failureCount + 1,
+      });
     })
   );
 
