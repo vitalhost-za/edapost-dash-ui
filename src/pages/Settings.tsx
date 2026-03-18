@@ -769,7 +769,7 @@ export default function SettingsPage() {
                     <div key={w.id} className="bg-card border border-border rounded-lg p-4 space-y-3">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <div className={cn("w-2 h-2 rounded-full", w.is_active ? "bg-emerald-500" : "bg-muted-foreground/40")} />
+                          <div className={cn("w-2 h-2 rounded-full", w.is_active ? "bg-primary" : "bg-muted-foreground/40")} />
                           <div>
                             <p className="text-sm font-medium">{w.name}</p>
                             <p className="text-xs text-muted-foreground font-mono mt-0.5 truncate max-w-md">{w.url}</p>
