@@ -1211,6 +1211,67 @@ export default function SettingsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Rate Limit Dialog */}
+      <Dialog open={showRateLimitDialog} onOpenChange={(open) => { if (!open) resetRateLimitForm(); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingRateLimit ? "Edit Rate Limit" : "Add Rate Limit"}</DialogTitle>
+            <DialogDescription>Set per-domain sending rate limits to control delivery speed.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Domain</Label>
+              <Input
+                placeholder="e.g., gmail.com or * for all"
+                value={rlDomain}
+                onChange={(e) => setRlDomain(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">Use * as a catch-all default for unlisted domains.</p>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Max per Minute</Label>
+                <Input type="number" min={1} value={rlMaxPerMinute} onChange={(e) => setRlMaxPerMinute(parseInt(e.target.value) || 10)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Max per Hour</Label>
+                <Input type="number" min={1} value={rlMaxPerHour} onChange={(e) => setRlMaxPerHour(parseInt(e.target.value) || 200)} />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={resetRateLimitForm}>Cancel</Button>
+            <Button
+              onClick={() => saveRateLimitMutation.mutate()}
+              disabled={saveRateLimitMutation.isPending || !rlDomain.trim()}
+              className="gap-2"
+            >
+              {saveRateLimitMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              {editingRateLimit ? "Update" : "Create"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Rate Limit Confirmation */}
+      <AlertDialog open={!!deleteRateLimitId} onOpenChange={() => setDeleteRateLimitId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this rate limit?</AlertDialogTitle>
+            <AlertDialogDescription>This domain will no longer have sending rate restrictions.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteRateLimitId && deleteRateLimitMutation.mutate(deleteRateLimitId)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 }
