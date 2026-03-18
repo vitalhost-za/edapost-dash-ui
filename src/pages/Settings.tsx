@@ -17,9 +17,10 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Plus, Trash2, Copy, Loader2, Save, Key, Bell, Server, Settings2, Shield,
-  CheckCircle, User, Camera,
+  CheckCircle, User, Camera, Webhook, ExternalLink, AlertTriangle, Pencil,
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
@@ -58,6 +59,32 @@ interface ApiKey {
   created_at: string;
 }
 
+interface WebhookEntry {
+  id: string;
+  name: string;
+  url: string;
+  secret: string | null;
+  events: string[];
+  is_active: boolean;
+  last_triggered_at: string | null;
+  last_status_code: number | null;
+  failure_count: number;
+  created_at: string;
+}
+
+const WEBHOOK_EVENTS = [
+  { value: "email.sent", label: "Email Sent" },
+  { value: "email.delivered", label: "Email Delivered" },
+  { value: "email.bounced", label: "Email Bounced" },
+  { value: "email.opened", label: "Email Opened" },
+  { value: "email.clicked", label: "Link Clicked" },
+  { value: "email.complained", label: "Spam Complaint" },
+  { value: "email.deferred", label: "Email Deferred" },
+  { value: "email.failed", label: "Email Failed" },
+  { value: "server.online", label: "Server Online" },
+  { value: "server.offline", label: "Server Offline" },
+];
+
 function generateApiKey(): { full: string; prefix: string; hash: string } {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   let key = "ep_";
@@ -82,6 +109,15 @@ export default function SettingsPage() {
   const [newKeyPerms, setNewKeyPerms] = useState("full");
   const [generatedKey, setGeneratedKey] = useState<string | null>(null);
   const [deleteKeyId, setDeleteKeyId] = useState<string | null>(null);
+
+  // Webhook state
+  const [showWebhookDialog, setShowWebhookDialog] = useState(false);
+  const [editingWebhook, setEditingWebhook] = useState<WebhookEntry | null>(null);
+  const [webhookName, setWebhookName] = useState("");
+  const [webhookUrl, setWebhookUrl] = useState("");
+  const [webhookSecret, setWebhookSecret] = useState("");
+  const [webhookEvents, setWebhookEvents] = useState<string[]>([]);
+  const [deleteWebhookId, setDeleteWebhookId] = useState<string | null>(null);
 
   // Fetch profile
   const { data: profile, isLoading: profileLoading } = useQuery({
@@ -254,6 +290,99 @@ export default function SettingsPage() {
     onError: (err: Error) => toast.error(err.message),
   });
 
+  // Fetch webhooks
+  const { data: webhooks, isLoading: webhooksLoading } = useQuery({
+    queryKey: ["webhooks"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("webhooks")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data as WebhookEntry[];
+    },
+  });
+
+  // Create/update webhook
+  const saveWebhookMutation = useMutation({
+    mutationFn: async () => {
+      if (editingWebhook) {
+        const { error } = await supabase.from("webhooks").update({
+          name: webhookName.trim(),
+          url: webhookUrl.trim(),
+          secret: webhookSecret.trim() || null,
+          events: webhookEvents,
+        }).eq("id", editingWebhook.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("webhooks").insert({
+          user_id: user!.id,
+          name: webhookName.trim() || "Untitled Webhook",
+          url: webhookUrl.trim(),
+          secret: webhookSecret.trim() || null,
+          events: webhookEvents,
+        });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["webhooks"] });
+      resetWebhookForm();
+      toast.success(editingWebhook ? "Webhook updated" : "Webhook created");
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  // Toggle webhook active
+  const toggleWebhookMutation = useMutation({
+    mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
+      const { error } = await supabase.from("webhooks").update({ is_active }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["webhooks"] });
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  // Delete webhook
+  const deleteWebhookMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("webhooks").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["webhooks"] });
+      setDeleteWebhookId(null);
+      toast.success("Webhook deleted");
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const resetWebhookForm = () => {
+    setShowWebhookDialog(false);
+    setEditingWebhook(null);
+    setWebhookName("");
+    setWebhookUrl("");
+    setWebhookSecret("");
+    setWebhookEvents([]);
+  };
+
+  const openEditWebhook = (w: WebhookEntry) => {
+    setEditingWebhook(w);
+    setWebhookName(w.name);
+    setWebhookUrl(w.url);
+    setWebhookSecret(w.secret ?? "");
+    setWebhookEvents(w.events);
+    setShowWebhookDialog(true);
+  };
+
+  const toggleWebhookEvent = (event: string) => {
+    setWebhookEvents((prev) =>
+      prev.includes(event) ? prev.filter((e) => e !== event) : [...prev, event]
+    );
+  };
+
   const updateField = (key: string, value: unknown) => {
     setSettings((prev) => ({ ...prev, [key]: value }));
   };
@@ -314,6 +443,7 @@ export default function SettingsPage() {
             <TabsTrigger value="auth" className="gap-1.5"><Shield className="h-3.5 w-3.5" /> Authentication</TabsTrigger>
             <TabsTrigger value="notifications" className="gap-1.5"><Bell className="h-3.5 w-3.5" /> Notifications</TabsTrigger>
             <TabsTrigger value="apikeys" className="gap-1.5"><Key className="h-3.5 w-3.5" /> API Keys</TabsTrigger>
+            <TabsTrigger value="webhooks" className="gap-1.5"><Webhook className="h-3.5 w-3.5" /> Webhooks</TabsTrigger>
           </TabsList>
 
           {/* Profile */}
@@ -618,6 +748,78 @@ export default function SettingsPage() {
               )}
             </div>
           </TabsContent>
+
+          {/* Webhooks */}
+          <TabsContent value="webhooks" className="mt-6">
+            <div className="space-y-4 max-w-3xl">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Receive real-time HTTP POST notifications when email events occur.</p>
+                </div>
+                <Button className="gap-2" onClick={() => { resetWebhookForm(); setShowWebhookDialog(true); }}>
+                  <Plus className="h-4 w-4" /> Add Webhook
+                </Button>
+              </div>
+
+              {webhooksLoading ? (
+                <div className="flex items-center justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+              ) : webhooks && webhooks.length > 0 ? (
+                <div className="space-y-3">
+                  {webhooks.map((w) => (
+                    <div key={w.id} className="bg-card border border-border rounded-lg p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className={cn("w-2 h-2 rounded-full", w.is_active ? "bg-primary" : "bg-muted-foreground/40")} />
+                          <div>
+                            <p className="text-sm font-medium">{w.name}</p>
+                            <p className="text-xs text-muted-foreground font-mono mt-0.5 truncate max-w-md">{w.url}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {w.failure_count > 0 && (
+                            <span className="text-xs text-destructive flex items-center gap-1">
+                              <AlertTriangle className="h-3 w-3" /> {w.failure_count} failures
+                            </span>
+                          )}
+                          <Switch
+                            checked={w.is_active}
+                            onCheckedChange={(v) => toggleWebhookMutation.mutate({ id: w.id, is_active: v })}
+                          />
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditWebhook(w)}>
+                            <Pencil className="h-3 w-3" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteWebhookId(w.id)}>
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {w.events.map((ev) => (
+                          <span key={ev} className="text-xs bg-secondary text-muted-foreground px-2 py-0.5 rounded">{ev}</span>
+                        ))}
+                      </div>
+                      {w.last_triggered_at && (
+                        <p className="text-xs text-muted-foreground">
+                          Last triggered {formatDistanceToNow(new Date(w.last_triggered_at), { addSuffix: true })}
+                          {w.last_status_code && (
+                            <span className={cn("ml-2", w.last_status_code < 300 ? "text-primary" : "text-destructive")}>
+                              HTTP {w.last_status_code}
+                            </span>
+                          )}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-card border border-border rounded-lg flex flex-col items-center justify-center py-16 text-center">
+                  <div className="p-3 rounded-xl bg-muted mb-3"><Webhook className="h-6 w-6 text-muted-foreground" /></div>
+                  <p className="text-sm font-medium">No webhooks configured</p>
+                  <p className="text-xs text-muted-foreground mt-1">Add a webhook to receive real-time event notifications via HTTP.</p>
+                </div>
+              )}
+            </div>
+          </TabsContent>
         </Tabs>
       </div>
 
@@ -684,6 +886,77 @@ export default function SettingsPage() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Revoke Key
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Webhook Create/Edit Dialog */}
+      <Dialog open={showWebhookDialog} onOpenChange={(open) => { if (!open) resetWebhookForm(); }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{editingWebhook ? "Edit Webhook" : "Add Webhook"}</DialogTitle>
+            <DialogDescription>
+              {editingWebhook ? "Update your webhook endpoint configuration." : "Configure an endpoint to receive event notifications via HTTP POST."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Name</Label>
+              <Input placeholder="e.g., Analytics Service" value={webhookName} onChange={(e) => setWebhookName(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Endpoint URL</Label>
+              <Input placeholder="https://api.example.com/webhooks" value={webhookUrl} onChange={(e) => setWebhookUrl(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Signing Secret <span className="text-muted-foreground text-xs font-normal">(optional)</span></Label>
+              <Input placeholder="whsec_..." value={webhookSecret} onChange={(e) => setWebhookSecret(e.target.value)} />
+              <p className="text-xs text-muted-foreground">Used to verify webhook payloads via HMAC-SHA256 signature.</p>
+            </div>
+            <div className="space-y-2">
+              <Label>Events</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {WEBHOOK_EVENTS.map((ev) => (
+                  <label key={ev.value} className="flex items-center gap-2 bg-secondary rounded-md px-3 py-2 cursor-pointer hover:bg-accent/50 transition-colors">
+                    <Checkbox
+                      checked={webhookEvents.includes(ev.value)}
+                      onCheckedChange={() => toggleWebhookEvent(ev.value)}
+                    />
+                    <span className="text-sm">{ev.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={resetWebhookForm}>Cancel</Button>
+            <Button
+              onClick={() => saveWebhookMutation.mutate()}
+              disabled={saveWebhookMutation.isPending || !webhookUrl.trim() || webhookEvents.length === 0}
+              className="gap-2"
+            >
+              {saveWebhookMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              {editingWebhook ? "Update Webhook" : "Create Webhook"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Webhook Confirmation */}
+      <AlertDialog open={!!deleteWebhookId} onOpenChange={() => setDeleteWebhookId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this webhook?</AlertDialogTitle>
+            <AlertDialogDescription>This endpoint will no longer receive event notifications.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteWebhookId && deleteWebhookMutation.mutate(deleteWebhookId)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete Webhook
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
