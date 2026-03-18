@@ -26,6 +26,9 @@ interface Delivery {
   success: boolean;
   error_message: string | null;
   attempt_number: number;
+  max_attempts: number;
+  next_retry_at: string | null;
+  delivery_id: string;
   created_at: string;
 }
 
