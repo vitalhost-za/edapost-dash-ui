@@ -98,10 +98,11 @@ export default function Compose() {
 
       // Insert recipients
       if (recipients.length > 0) {
-        const recipientRows = recipients.map((email) => ({
+        const recipientRows = recipients.map((r) => ({
           campaign_id: campaign.id,
           user_id: user!.id,
-          email,
+          email: r.email,
+          name: r.name || null,
         }));
         const { error: recError } = await supabase
           .from("campaign_recipients")
