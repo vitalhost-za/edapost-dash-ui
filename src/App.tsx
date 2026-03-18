@@ -20,6 +20,7 @@ import Login from "./pages/Login";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import WebhookDeliveries from "./pages/WebhookDeliveries";
+import Templates from "./pages/Templates";
 
 const queryClient = new QueryClient();
 
@@ -37,6 +38,7 @@ const App = () => (
             <Route path="/servers" element={<ProtectedRoute><Servers /></ProtectedRoute>} />
             <Route path="/compose" element={<ProtectedRoute><Compose /></ProtectedRoute>} />
             <Route path="/campaigns" element={<ProtectedRoute><Campaigns /></ProtectedRoute>} />
+            <Route path="/templates" element={<ProtectedRoute><Templates /></ProtectedRoute>} />
             <Route path="/queue" element={<ProtectedRoute><Queue /></ProtectedRoute>} />
             <Route path="/logs" element={<ProtectedRoute><Logs /></ProtectedRoute>} />
             <Route path="/bounces" element={<ProtectedRoute><Bounces /></ProtectedRoute>} />

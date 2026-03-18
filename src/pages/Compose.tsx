@@ -11,7 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ChevronDown, Plus, Trash2, Monitor, Smartphone, Send, Loader2, Save, Upload } from "lucide-react";
+import { ChevronDown, Plus, Trash2, Monitor, Smartphone, Send, Loader2, Save, Upload, LayoutTemplate } from "lucide-react";
 import { CsvImport } from "@/components/CsvImport";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -54,6 +54,27 @@ export default function Compose() {
       return data;
     },
   });
+
+  const { data: emailTemplates } = useQuery({
+    queryKey: ["email-templates-list"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("email_templates")
+        .select("id, name, subject, html_body, plain_body")
+        .order("name");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const applyTemplate = (templateId: string) => {
+    const tpl = emailTemplates?.find((t) => t.id === templateId);
+    if (!tpl) return;
+    if (tpl.subject) setSubject(tpl.subject);
+    setHtmlBody(tpl.html_body);
+    if (tpl.plain_body) setPlainBody(tpl.plain_body);
+    toast.success(`Template "${tpl.name}" applied`);
+  };
 
   const saveMutation = useMutation({
     mutationFn: async (status: "draft" | "scheduled" | "sending") => {
@@ -168,6 +189,25 @@ export default function Compose() {
         <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
           {/* Form */}
           <div className="xl:col-span-3 space-y-5">
+            {/* Template selector */}
+            {emailTemplates && emailTemplates.length > 0 && (
+              <div className="bg-card border border-border rounded-lg p-4">
+                <div className="flex items-center gap-3">
+                  <LayoutTemplate className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <Select onValueChange={applyTemplate}>
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Load from template…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {emailTemplates.map((t) => (
+                        <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+
             <div className="bg-card border border-border rounded-lg p-5 space-y-4">
               <div className="space-y-2">
                 <Label>Campaign Name</Label>

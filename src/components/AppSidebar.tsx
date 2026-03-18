@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, PenSquare, Megaphone, ListOrdered,
-  ScrollText, AlertTriangle, ShieldBan, Globe, BarChart3, Settings, Mail, Server, Webhook
+  ScrollText, AlertTriangle, ShieldBan, Globe, BarChart3, Settings, Mail, Server, Webhook, LayoutTemplate
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -15,6 +15,7 @@ const navItems = [
   { title: "Servers", url: "/servers", icon: Server },
   { title: "Compose", url: "/compose", icon: PenSquare },
   { title: "Campaigns", url: "/campaigns", icon: Megaphone },
+  { title: "Templates", url: "/templates", icon: LayoutTemplate },
   { title: "Queue", url: "/queue", icon: ListOrdered },
   { title: "Logs", url: "/logs", icon: ScrollText },
   { title: "Bounces", url: "/bounces", icon: AlertTriangle },
