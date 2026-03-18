@@ -20,7 +20,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Plus, Trash2, Copy, Loader2, Save, Key, Bell, Server, Settings2, Shield,
-  CheckCircle, User, Camera, Webhook, ExternalLink, AlertTriangle, Pencil,
+  CheckCircle, User, Camera, Webhook, ExternalLink, AlertTriangle, Pencil, Send,
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
