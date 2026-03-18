@@ -217,7 +217,12 @@ export default function Campaigns() {
                         </p>
                         <p className="text-xs text-muted-foreground mt-0.5">
                           Created {formatDistanceToNow(new Date(campaign.created_at), { addSuffix: true })}
-                          {campaign.scheduled_at && ` · Scheduled for ${new Date(campaign.scheduled_at).toLocaleString()}`}
+                          {campaign.scheduled_at && ` · Scheduled for ${new Date(campaign.scheduled_at).toLocaleString("en-US", { timeZone: campaign.timezone || "UTC", timeZoneName: "short" })}`}
+                          {campaign.recurrence_pattern && campaign.recurrence_pattern !== "none" && (
+                            <span className="ml-1 inline-flex items-center text-primary">
+                              · ↻ {campaign.recurrence_pattern}
+                            </span>
+                          )}
                         </p>
                       </div>
 
