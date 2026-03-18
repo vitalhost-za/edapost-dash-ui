@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ChevronDown, Plus, Trash2, Monitor, Smartphone, Send, Loader2, Save, Upload, LayoutTemplate, Users, FlaskConical } from "lucide-react";
+import { ChevronDown, Plus, Trash2, Monitor, Smartphone, Send, Loader2, Save, Upload, LayoutTemplate, Users, FlaskConical, Paperclip, X, FileIcon } from "lucide-react";
 import { CsvImport } from "@/components/CsvImport";
 import { CampaignScheduler } from "@/components/CampaignScheduler";
 import { AbTestEditor, type AbVariant } from "@/components/AbTestEditor";
@@ -50,6 +50,63 @@ export default function Compose() {
   // A/B testing state
   const [abTestEnabled, setAbTestEnabled] = useState(false);
   const [abVariants, setAbVariants] = useState<AbVariant[]>([]);
+
+  // Attachments state
+  const [attachments, setAttachments] = useState<{ file: File; uploading: boolean; storagePath?: string; error?: string }[]>([]);
+  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+
+  const handleAttachFiles = async (files: FileList | null) => {
+    if (!files || !user) return;
+    const newFiles = Array.from(files);
+    const toAdd = newFiles
+      .filter((f) => {
+        if (f.size > MAX_FILE_SIZE) {
+          toast.error(`${f.name} exceeds 5 MB limit`);
+          return false;
+        }
+        if (attachments.some((a) => a.file.name === f.name && a.file.size === f.size)) {
+          toast.error(`${f.name} already attached`);
+          return false;
+        }
+        return true;
+      })
+      .map((f) => ({ file: f, uploading: true }));
+
+    if (toAdd.length === 0) return;
+    setAttachments((prev) => [...prev, ...toAdd]);
+
+    for (const item of toAdd) {
+      const path = `${user.id}/${crypto.randomUUID()}_${item.file.name}`;
+      const { error } = await supabase.storage
+        .from("campaign-attachments")
+        .upload(path, item.file, { contentType: item.file.type });
+
+      setAttachments((prev) =>
+        prev.map((a) =>
+          a.file === item.file
+            ? error
+              ? { ...a, uploading: false, error: error.message }
+              : { ...a, uploading: false, storagePath: path }
+            : a
+        )
+      );
+      if (error) toast.error(`Failed to upload ${item.file.name}`);
+    }
+  };
+
+  const removeAttachment = async (idx: number) => {
+    const att = attachments[idx];
+    if (att.storagePath) {
+      await supabase.storage.from("campaign-attachments").remove([att.storagePath]);
+    }
+    setAttachments((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
 
   const { data: domains } = useQuery({
     queryKey: ["sending-domains"],
@@ -196,7 +253,21 @@ export default function Compose() {
         if (abError) throw abError;
       }
 
-      // If sending (non-A/B), also queue the emails
+      // Save attachment records
+      const uploadedAttachments = attachments.filter((a) => a.storagePath && !a.error);
+      if (uploadedAttachments.length > 0) {
+        const attRows = uploadedAttachments.map((a) => ({
+          campaign_id: campaign.id,
+          user_id: user!.id,
+          file_name: a.file.name,
+          file_size: a.file.size,
+          content_type: a.file.type || "application/octet-stream",
+          storage_path: a.storagePath!,
+        }));
+        const { error: attError } = await supabase.from("campaign_attachments").insert(attRows);
+        if (attError) throw attError;
+      }
+
       if (status === "sending" && !abTestEnabled) {
         const queueRows = recipients.map((r) => ({
           user_id: user!.id,
@@ -457,7 +528,52 @@ export default function Compose() {
               </Tabs>
             </div>
 
-            {/* A/B Test Editor */}
+            {/* Attachments */}
+            <div className="bg-card border border-border rounded-lg p-5 space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="flex items-center gap-2">
+                  <Paperclip className="h-4 w-4 text-muted-foreground" />
+                  Attachments
+                  {attachments.length > 0 && (
+                    <span className="text-xs text-muted-foreground">({attachments.length})</span>
+                  )}
+                </Label>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() => {
+                    const input = document.createElement("input");
+                    input.type = "file";
+                    input.multiple = true;
+                    input.onchange = () => handleAttachFiles(input.files);
+                    input.click();
+                  }}
+                >
+                  <Upload className="h-3 w-3" /> Add Files
+                </Button>
+              </div>
+              {attachments.length > 0 ? (
+                <div className="space-y-2">
+                  {attachments.map((att, idx) => (
+                    <div key={idx} className="flex items-center gap-3 p-2.5 bg-secondary rounded-md text-sm">
+                      <FileIcon className="h-4 w-4 text-muted-foreground shrink-0" />
+                      <span className="flex-1 truncate">{att.file.name}</span>
+                      <span className="text-xs text-muted-foreground shrink-0">{formatFileSize(att.file.size)}</span>
+                      {att.uploading && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
+                      {att.error && <span className="text-xs text-destructive">Failed</span>}
+                      <button onClick={() => removeAttachment(idx)} className="text-muted-foreground hover:text-destructive transition-colors">
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                  <p className="text-[10px] text-muted-foreground">Max 5 MB per file</p>
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">No attachments. Click "Add Files" to attach documents, images, or other files.</p>
+              )}
+            </div>
+
             <AbTestEditor
               enabled={abTestEnabled}
               onEnabledChange={setAbTestEnabled}
