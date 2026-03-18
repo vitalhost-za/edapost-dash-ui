@@ -15,6 +15,7 @@ import { ChevronDown, Plus, Trash2, Monitor, Smartphone, Send, Loader2, Save, Up
 import { CsvImport } from "@/components/CsvImport";
 import { CampaignScheduler } from "@/components/CampaignScheduler";
 import { AbTestEditor, type AbVariant } from "@/components/AbTestEditor";
+import { MergeTagPicker, replaceMergeTags } from "@/components/MergeTagPicker";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
