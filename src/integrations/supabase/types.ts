@@ -64,6 +64,68 @@ export type Database = {
           },
         ]
       }
+      email_queue: {
+        Row: {
+          attempts: number
+          created_at: string
+          error_message: string | null
+          from_address: string
+          id: string
+          max_attempts: number
+          next_retry_at: string | null
+          postfix_queue_id: string | null
+          sent_at: string | null
+          smtp_server_id: string | null
+          status: string
+          subject: string
+          to_address: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          error_message?: string | null
+          from_address: string
+          id?: string
+          max_attempts?: number
+          next_retry_at?: string | null
+          postfix_queue_id?: string | null
+          sent_at?: string | null
+          smtp_server_id?: string | null
+          status?: string
+          subject: string
+          to_address: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          error_message?: string | null
+          from_address?: string
+          id?: string
+          max_attempts?: number
+          next_retry_at?: string | null
+          postfix_queue_id?: string | null
+          sent_at?: string | null
+          smtp_server_id?: string | null
+          status?: string
+          subject?: string
+          to_address?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_queue_smtp_server_id_fkey"
+            columns: ["smtp_server_id"]
+            isOneToOne: false
+            referencedRelation: "smtp_servers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ip_warmup: {
         Row: {
           created_at: string
