@@ -42,8 +42,8 @@
 - [ ] 🖥️ **Server** — Set PTR (reverse DNS) via VPS provider: server IP → `mail.edapost.net`
 - [ ] 🖥️ **Server** — Add SPF TXT record: `v=spf1 ip4:<SERVER_IP> -all`
 - [ ] 🖥️ **Server** — Add DMARC TXT record on `_dmarc.edapost.net`
-✅ 🖥️ **Server** — Verify all DNS records with `dig` or online checker
-✅ 🖥️ **Server** — Confirm PTR record resolves correctly
+- [x] 🖥️ **Server** — Verify all DNS records with `dig` or online checker
+- [x] 🖥️ **Server** — Confirm PTR record resolves correctly
 
 ---
 
@@ -95,10 +95,10 @@
 - [ ] 🖥️ **Server** — Test Redis connectivity
 
 ### 6b. Email API
-✅ ⚛️ **App** — Design email job payload schema (to, from, subject, body, headers, metadata)
-✅ ⚛️ **App** — Implement internal API endpoint to accept email payloads
-✅ ⚛️ **App** — Implement enqueue logic (push JSON job to Redis queue)
-✅ ⚛️ **App** — Return job ID to caller
+- [x] ⚛️ **App** — Design email job payload schema (to, from, subject, body, headers, metadata)
+- [x] ⚛️ **App** — Implement internal API endpoint to accept email payloads
+- [x] ⚛️ **App** — Implement enqueue logic (push JSON job to Redis queue)
+- [x] ⚛️ **App** — Return job ID to caller
 - [ ] ⚛️ **App** — Write unit tests for the email API
 
 ### 6c. SMTP Worker
@@ -112,7 +112,7 @@
 
 ### 6d. Rate Limiting
 - [ ] ⚛️ **App** — Implement per-domain sending rate limits
-✅ ⚛️ **App** — Make rate limits configurable
+- [x] ⚛️ **App** — Make rate limits configurable
 - [ ] ⚛️ **App** — Test rate limiting under load
 
 ---
@@ -137,8 +137,8 @@
 - [ ] ⚛️ **App** — Log complaints for analytics
 
 ### 7c. Suppression List
-✅ ⚛️ **App** — Create suppression list database/table
-✅ ⚛️ **App** — Populate with hard bounces, complaints, manual unsubscribes
+- [x] ⚛️ **App** — Create suppression list database/table
+- [x] ⚛️ **App** — Populate with hard bounces, complaints, manual unsubscribes
 - [ ] ⚛️ **App** — Integrate suppression check into queue worker (pre-send)
 - [ ] ⚛️ **App** — Write tests for suppression list logic
 
@@ -167,10 +167,10 @@
 - [ ] 🖥️ **Server** — Configure Prometheus to scrape all exporters
 
 ### 9b. Email Metrics
-✅ ⚛️ **App** — Track emails sent per minute (from queue worker)
-✅ ⚛️ **App** — Track delivery success rate (from Postfix logs)
-✅ ⚛️ **App** — Track bounce rate (from bounce processor)
-✅ ⚛️ **App** — Track complaint rate (from FBL processor)
+- [x] ⚛️ **App** — Track emails sent per minute (from queue worker)
+- [x] ⚛️ **App** — Track delivery success rate (from Postfix logs)
+- [x] ⚛️ **App** — Track bounce rate (from bounce processor)
+- [x] ⚛️ **App** — Track complaint rate (from FBL processor)
 - [ ] ⚛️ **App** — Track queue depth (Redis)
 - [ ] ⚛️ **App** — Track queue latency / oldest job age (Redis)
 
@@ -194,13 +194,13 @@
 ## Phase 10: EdaPost Application Integration
 
 - [ ] ⚛️ **App** — Build internal email sending SDK/library
-✅ ⚛️ **App** — Implement `send_email()` interface (to, from, subject, html, text, headers, metadata)
-✅ ⚛️ **App** — Implement webhook/status callback system
-✅ ⚛️ **App** — Track statuses: queued, sent, delivered, bounced, complained
-✅ ⚛️ **App** — Store email events in database for per-email tracking
-✅ ⚛️ **App** — Implement email template rendering (HTML + plain text MIME)
+- [x] ⚛️ **App** — Implement `send_email()` interface (to, from, subject, html, text, headers, metadata)
+- [x] ⚛️ **App** — Implement webhook/status callback system
+- [x] ⚛️ **App** — Track statuses: queued, sent, delivered, bounced, complained
+- [x] ⚛️ **App** — Store email events in database for per-email tracking
+- [x] ⚛️ **App** — Implement email template rendering (HTML + plain text MIME)
 - [ ] ⚛️ **App** — Inline CSS in HTML templates
-✅ ⚛️ **App** — Add `List-Unsubscribe` and `List-Unsubscribe-Post` headers to bulk emails
+- [x] ⚛️ **App** — Add `List-Unsubscribe` and `List-Unsubscribe-Post` headers to bulk emails
 - [ ] ⚛️ **App** — Process unsubscribe requests and update suppression list
 - [ ] ⚛️ **App** — Write integration tests for end-to-end email flow
 
