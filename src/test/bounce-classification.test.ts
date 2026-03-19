@@ -237,9 +237,10 @@ describe("Bounce Classification", () => {
   });
 
   describe("Code extraction from error text", () => {
-    it("extracts 3-digit code from text", () => {
-      const result = classifyBounce(null, "550 User not found");
+    it("extracts 3-digit code from text when matched by pattern", () => {
+      const result = classifyBounce(null, "550 User unknown");
       expect(result.code).toBe("550");
+      expect(result.type).toBe("hard");
     });
   });
 });
