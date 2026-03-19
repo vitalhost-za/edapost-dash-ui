@@ -407,6 +407,36 @@ async function processEmail(
   const maxAttempts = (email.max_attempts as number) || 5;
 
   try {
+    // Check suppression list before sending
+    const { count: suppressedCount } = await supabase
+      .from("suppression_list")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .eq("email", toAddress);
+
+    if ((suppressedCount ?? 0) > 0) {
+      await supabase
+        .from("email_queue")
+        .update({
+          status: "failed",
+          error_message: "Recipient is on suppression list",
+          attempts: attempts + 1,
+        })
+        .eq("id", emailId);
+
+      await supabase.from("email_logs").insert({
+        user_id: userId,
+        event_type: "suppressed",
+        from_address: fromAddress,
+        to_address: toAddress,
+        subject,
+        smtp_response: "Blocked by suppression list",
+      });
+
+      results.failed++;
+      return;
+    }
+
     // Extract recipient domain for rate limiting
     const recipientDomain = toAddress.split("@")[1]?.toLowerCase() || "unknown";
 
@@ -531,9 +561,12 @@ async function processEmail(
     } else {
       // Failure: determine if retryable
       const newAttempts = attempts + 1;
-      const isBounce = smtpResult.error?.includes("550") || smtpResult.error?.includes("553") || smtpResult.error?.includes("554");
+      // Extract response code from error text
+      const codeMatch = (smtpResult.error || smtpResult.response || "").match(/\b([245]\d{2})\b/);
+      const responseCode = codeMatch ? codeMatch[1] : null;
+      const isHardBounce = responseCode && ["550", "551", "552", "553", "554", "555", "521", "556"].includes(responseCode);
 
-      if (isBounce || newAttempts >= maxAttempts) {
+      if (isHardBounce || newAttempts >= maxAttempts) {
         // Permanent failure
         await supabase
           .from("email_queue")
@@ -547,26 +580,29 @@ async function processEmail(
         // Record bounce in email_logs
         await supabase.from("email_logs").insert({
           user_id: userId,
-          event_type: isBounce ? "bounced" : "failed",
+          event_type: isHardBounce ? "bounced" : "failed",
           from_address: fromAddress,
           to_address: toAddress,
           subject,
           message_id: `<${messageId}>`,
           smtp_response: smtpResult.error || smtpResult.response,
-          response_code: isBounce ? "550" : "500",
+          response_code: responseCode || "500",
           smtp_server_id: smtpServerId,
         });
 
-        // Record in bounces table if it's a bounce
-        if (isBounce) {
-          await supabase.from("bounces").insert({
-            user_id: userId,
-            email: toAddress,
-            bounce_type: "hard",
-            bounce_code: "550",
-            reason: smtpResult.error || smtpResult.response,
-            smtp_server_id: smtpServerId,
+        // Call process-bounces for classification & auto-suppression
+        try {
+          await supabase.functions.invoke("process-bounces", {
+            body: {
+              user_id: userId,
+              email: toAddress,
+              response_code: responseCode,
+              error_text: smtpResult.error || smtpResult.response,
+              smtp_server_id: smtpServerId,
+            },
           });
+        } catch (bounceErr) {
+          console.error("Failed to invoke process-bounces:", bounceErr);
         }
 
         results.failed++;
