@@ -12,8 +12,8 @@
 
 <!-- Update these counters as items are checked off -->
 - **Total tasks:** 96
-- **Completed:** 30
-- **Remaining:** 66
+- **Completed:** 36
+- **Remaining:** 60
 
 ---
 
@@ -122,11 +122,11 @@
 ### 7a. Bounce Processing
 - [ ] 🖥️ **Server** — Install Rspamd and integrate with Postfix
 - [ ] 🖥️ **Server** — Configure dedicated bounce address (`bounces@edapost.net`)
-- [ ] ⚛️ **App** — Build DSN (Delivery Status Notification) parser
-- [ ] ⚛️ **App** — Classify bounces: hard vs. soft
-- [ ] ⚛️ **App** — Hard bounce → mark address invalid, suppress future sends
-- [ ] ⚛️ **App** — Soft bounce → increment retry counter, suppress after threshold
-- [ ] ⚛️ **App** — Write tests for bounce classification logic
+- [x] ⚛️ **App** — Build DSN (Delivery Status Notification) parser
+- [x] ⚛️ **App** — Classify bounces: hard vs. soft
+- [x] ⚛️ **App** — Hard bounce → mark address invalid, suppress future sends
+- [x] ⚛️ **App** — Soft bounce → increment retry counter, suppress after threshold
+- [x] ⚛️ **App** — Write tests for bounce classification logic
 
 ### 7b. Complaint (FBL) Processing
 - [ ] 🖥️ **Server** — Register with Gmail Postmaster Tools
@@ -139,7 +139,7 @@
 ### 7c. Suppression List
 - [x] ⚛️ **App** — Create suppression list database/table
 - [x] ⚛️ **App** — Populate with hard bounces, complaints, manual unsubscribes
-- [ ] ⚛️ **App** — Integrate suppression check into queue worker (pre-send)
+- [x] ⚛️ **App** — Integrate suppression check into queue worker (pre-send)
 - [ ] ⚛️ **App** — Write tests for suppression list logic
 
 ---
@@ -240,4 +240,4 @@
 
 ---
 
-*Last updated: 2026-03-18*
+*Last updated: 2026-03-19*
