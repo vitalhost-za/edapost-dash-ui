@@ -407,6 +407,36 @@ async function processEmail(
   const maxAttempts = (email.max_attempts as number) || 5;
 
   try {
+    // Check suppression list before sending
+    const { count: suppressedCount } = await supabase
+      .from("suppression_list")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .eq("email", toAddress);
+
+    if ((suppressedCount ?? 0) > 0) {
+      await supabase
+        .from("email_queue")
+        .update({
+          status: "failed",
+          error_message: "Recipient is on suppression list",
+          attempts: attempts + 1,
+        })
+        .eq("id", emailId);
+
+      await supabase.from("email_logs").insert({
+        user_id: userId,
+        event_type: "suppressed",
+        from_address: fromAddress,
+        to_address: toAddress,
+        subject,
+        smtp_response: "Blocked by suppression list",
+      });
+
+      results.failed++;
+      return;
+    }
+
     // Extract recipient domain for rate limiting
     const recipientDomain = toAddress.split("@")[1]?.toLowerCase() || "unknown";
 
