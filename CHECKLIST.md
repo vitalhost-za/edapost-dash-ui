@@ -12,8 +12,8 @@
 
 <!-- Update these counters as items are checked off -->
 - **Total tasks:** 96
-- **Completed:** 36
-- **Remaining:** 60
+- **Completed:** 37
+- **Remaining:** 59
 
 ---
 
@@ -99,7 +99,7 @@
 - [x] ⚛️ **App** — Implement internal API endpoint to accept email payloads
 - [x] ⚛️ **App** — Implement enqueue logic (push JSON job to Redis queue)
 - [x] ⚛️ **App** — Return job ID to caller
-- [ ] ⚛️ **App** — Write unit tests for the email API
+- [x] ⚛️ **App** — Write unit tests for the email API
 
 ### 6c. SMTP Worker
 - [x] ⚛️ **App** — Implement worker that pops jobs from Redis queue
