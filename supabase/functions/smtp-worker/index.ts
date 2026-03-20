@@ -1,4 +1,10 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import {
+  checkWarmupVolumeCap,
+  incrementWarmupCounter,
+  advanceWarmupDays,
+  prioritizeByEngagement,
+} from "./warmup.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -355,14 +361,50 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 3. Process emails with concurrency control
-    const results = { sent: 0, failed: 0, deferred: 0, rateLimited: 0 };
+    // 2b. Check warmup status per server and fetch engagement priority
+    const warmupCache: Record<string, Awaited<ReturnType<typeof checkWarmupVolumeCap>>> = {};
+
+    // Check if any user has warmup enabled
+    const { data: warmupSettings } = await supabase
+      .from("user_settings")
+      .select("user_id, warmup_enabled")
+      .in("user_id", userIds)
+      .eq("warmup_enabled", true);
+
+    const warmupUserIds = new Set((warmupSettings || []).map((s) => s.user_id));
+
+    // For warmup users, prioritize engaged recipients
+    let processableEmails = queuedEmails as Record<string, unknown>[];
+    for (const uid of warmupUserIds) {
+      const userEmails = processableEmails.filter((e) => e.user_id === uid);
+      if (userEmails.length > 0) {
+        const prioritized = await prioritizeByEngagement(supabase, userEmails, uid);
+        const otherEmails = processableEmails.filter((e) => e.user_id !== uid);
+        processableEmails = [...prioritized, ...otherEmails];
+      }
+    }
+
+    // 3. Process emails with concurrency control + warmup volume caps
+    const results = { sent: 0, failed: 0, deferred: 0, rateLimited: 0, warmupDeferred: 0 };
 
     // Process in chunks based on concurrency
-    for (let i = 0; i < queuedEmails.length; i += concurrency) {
-      const chunk = queuedEmails.slice(i, i + concurrency);
-      const promises = chunk.map((email) => processEmail(supabase, email, smtpServers, results));
+    for (let i = 0; i < processableEmails.length; i += concurrency) {
+      const chunk = processableEmails.slice(i, i + concurrency);
+      const promises = chunk.map((email) =>
+        processEmail(supabase, email, smtpServers, results, warmupUserIds, warmupCache)
+      );
       await Promise.allSettled(promises);
+
+      // Add inter-batch delay during warmup to spread sends (no bursts)
+      if (warmupUserIds.size > 0 && i + concurrency < processableEmails.length) {
+        const delayMs = Math.max(500, Math.floor(3600000 / (processableEmails.length * 2)));
+        await new Promise((r) => setTimeout(r, Math.min(delayMs, 2000)));
+      }
+    }
+
+    // 3b. Advance warmup days (reset daily counters if new day)
+    if (warmupUserIds.size > 0) {
+      await advanceWarmupDays(supabase);
     }
 
     // 4. Clean up old domain_send_tracking entries (older than 2 hours)
@@ -374,7 +416,7 @@ Deno.serve(async (req) => {
 
     return new Response(
       JSON.stringify({
-        processed: queuedEmails.length,
+        processed: processableEmails.length,
         ...results,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -393,7 +435,9 @@ async function processEmail(
   supabase: ReturnType<typeof createClient>,
   email: Record<string, unknown>,
   smtpServers: Record<string, { hostname: string; ip_address: string; port: number; tls_enabled: boolean }>,
-  results: { sent: number; failed: number; deferred: number; rateLimited: number }
+  results: { sent: number; failed: number; deferred: number; rateLimited: number; warmupDeferred: number },
+  warmupUserIds: Set<string>,
+  warmupCache: Record<string, Awaited<ReturnType<typeof checkWarmupVolumeCap>>>
 ): Promise<void> {
   const emailId = email.id as string;
   const userId = email.user_id as string;
@@ -439,6 +483,31 @@ async function processEmail(
 
     // Extract recipient domain for rate limiting
     const recipientDomain = toAddress.split("@")[1]?.toLowerCase() || "unknown";
+
+    // Check warmup volume cap (if warmup is active for this user)
+    if (warmupUserIds.has(userId) && smtpServerId) {
+      const cacheKey = `${userId}:${smtpServerId}`;
+      if (!warmupCache[cacheKey]) {
+        warmupCache[cacheKey] = await checkWarmupVolumeCap(supabase, userId, smtpServerId);
+      }
+      const warmupStatus = warmupCache[cacheKey];
+
+      if (warmupStatus.isWarmingUp && !warmupStatus.allowed) {
+        // Defer — retry later (spread throughout the day)
+        const retryAt = new Date(Date.now() + 15 * 60 * 1000).toISOString(); // Retry in 15 min
+        await supabase
+          .from("email_queue")
+          .update({
+            status: "deferred",
+            error_message: warmupStatus.reason || "Warmup volume cap reached",
+            next_retry_at: retryAt,
+          })
+          .eq("id", emailId);
+
+        results.warmupDeferred++;
+        return;
+      }
+    }
 
     // Check domain rate limit
     const rateCheck = await checkDomainRateLimit(supabase, userId, recipientDomain);
@@ -556,6 +625,13 @@ async function processEmail(
         user_id: userId,
         domain: toAddress.split("@")[1]?.toLowerCase() || "unknown",
       });
+
+      // Increment warmup counter if active
+      if (warmupUserIds.has(userId) && smtpServerId) {
+        await incrementWarmupCounter(supabase, userId, smtpServerId);
+        // Invalidate warmup cache so next email rechecks
+        delete warmupCache[`${userId}:${smtpServerId}`];
+      }
 
       results.sent++;
     } else {
