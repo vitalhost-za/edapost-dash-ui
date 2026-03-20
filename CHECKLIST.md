@@ -12,8 +12,8 @@
 
 <!-- Update these counters as items are checked off -->
 - **Total tasks:** 96
-- **Completed:** 37
-- **Remaining:** 59
+- **Completed:** 45
+- **Remaining:** 51
 
 ---
 
@@ -132,24 +132,24 @@
 - [ ] 🖥️ **Server** — Register with Gmail Postmaster Tools
 - [ ] 🖥️ **Server** — Register with Microsoft SNDS
 - [ ] 🖥️ **Server** — Register with Yahoo Complaint Feedback Loop
-- [ ] ⚛️ **App** — Build ARF (Abuse Reporting Format) report parser
-- [ ] ⚛️ **App** — Auto-unsubscribe complaining addresses
-- [ ] ⚛️ **App** — Log complaints for analytics
+- [x] ⚛️ **App** — Build ARF (Abuse Reporting Format) report parser
+- [x] ⚛️ **App** — Auto-unsubscribe complaining addresses
+- [x] ⚛️ **App** — Log complaints for analytics
 
 ### 7c. Suppression List
 - [x] ⚛️ **App** — Create suppression list database/table
 - [x] ⚛️ **App** — Populate with hard bounces, complaints, manual unsubscribes
 - [x] ⚛️ **App** — Integrate suppression check into queue worker (pre-send)
-- [ ] ⚛️ **App** — Write tests for suppression list logic
+- [x] ⚛️ **App** — Write tests for suppression list logic
 
 ---
 
 ## Phase 8: IP Warmup
 
-- [ ] ⚛️ **App** — Define warmup schedule (Day 1: 50 → Day 30: 10,000)
-- [ ] ⚛️ **App** — Implement volume caps in queue worker
-- [ ] ⚛️ **App** — Prioritize engaged/active recipients during warmup
-- [ ] ⚛️ **App** — Spread sends evenly throughout the day (no bursts)
+- [x] ⚛️ **App** — Define warmup schedule (Day 1: 50 → Day 30: 10,000)
+- [x] ⚛️ **App** — Implement volume caps in queue worker
+- [x] ⚛️ **App** — Prioritize engaged/active recipients during warmup
+- [x] ⚛️ **App** — Spread sends evenly throughout the day (no bursts)
 - [ ] 🖥️ **Server** — Monitor Gmail Postmaster Tools daily during warmup
 - [ ] 🖥️ **Server** — Monitor Microsoft SNDS daily during warmup
 - [ ] 🖥️ **Server** — Confirm bounce rate stays below 2%
@@ -240,4 +240,4 @@
 
 ---
 
-*Last updated: 2026-03-19*
+*Last updated: 2026-03-20*
