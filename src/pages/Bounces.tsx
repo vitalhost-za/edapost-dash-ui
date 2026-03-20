@@ -315,7 +315,96 @@ export default function Bounces() {
             </div>
           </TabsContent>
 
-          {/* Suppression Tab */}
+          {/* Complaints Tab */}
+          <TabsContent value="complaints" className="mt-4">
+            <div className="bg-card border border-border rounded-lg overflow-hidden">
+              <div className="p-4 flex flex-wrap items-center gap-3 border-b border-border">
+                <div className="relative flex-1 min-w-[200px]">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by recipient email"
+                    className="pl-9 bg-transparent"
+                    value={complaintSearch}
+                    onChange={(e) => setComplaintSearch(e.target.value)}
+                  />
+                </div>
+                <Select value={complaintFeedbackType} onValueChange={setComplaintFeedbackType}>
+                  <SelectTrigger className="w-[140px]"><SelectValue placeholder="Feedback Type" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Types</SelectItem>
+                    <SelectItem value="abuse">Abuse</SelectItem>
+                    <SelectItem value="fraud">Fraud</SelectItem>
+                    <SelectItem value="virus">Virus</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                    <SelectItem value="not-spam">Not Spam</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={complaintDateRange} onValueChange={setComplaintDateRange}>
+                  <SelectTrigger className="w-[130px]"><SelectValue placeholder="Date Range" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="24h">Last 24 hours</SelectItem>
+                    <SelectItem value="7d">Last 7 days</SelectItem>
+                    <SelectItem value="30d">Last 30 days</SelectItem>
+                    <SelectItem value="90d">Last 90 days</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {complaintsLoading ? (
+                <div className="flex items-center justify-center py-16">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : complaints && complaints.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border">
+                        <th className="p-3 text-left text-xs font-medium text-muted-foreground">Recipient</th>
+                        <th className="p-3 text-left text-xs font-medium text-muted-foreground">From</th>
+                        <th className="p-3 text-left text-xs font-medium text-muted-foreground">Feedback Type</th>
+                        <th className="p-3 text-left text-xs font-medium text-muted-foreground">Source</th>
+                        <th className="p-3 text-left text-xs font-medium text-muted-foreground">Response</th>
+                        <th className="p-3 text-left text-xs font-medium text-muted-foreground">Date</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {complaints.map((c) => {
+                        const meta = (c.metadata || {}) as Record<string, string>;
+                        return (
+                          <tr key={c.id} className="border-b border-border hover:bg-accent/30 transition-colors">
+                            <td className="p-3 font-medium">{c.to_address}</td>
+                            <td className="p-3 text-muted-foreground">{c.from_address}</td>
+                            <td className="p-3">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-destructive/10 text-destructive">
+                                <MessageSquareWarning className="h-3 w-3" />
+                                {meta.feedback_type || "abuse"}
+                              </span>
+                            </td>
+                            <td className="p-3 text-muted-foreground text-xs">{meta.source || "fbl"}</td>
+                            <td className="p-3 text-muted-foreground max-w-[200px] truncate text-xs">{c.smtp_response || "—"}</td>
+                            <td className="p-3 text-muted-foreground text-xs">
+                              {formatDistanceToNow(new Date(c.created_at), { addSuffix: true })}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-16 text-center">
+                  <div className="p-3 rounded-xl bg-muted mb-3">
+                    <MessageSquareWarning className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <p className="text-sm font-medium">No complaints recorded</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    FBL complaints and spam reports will appear here automatically.
+                  </p>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
           <TabsContent value="suppression" className="mt-4">
             <div className="bg-card border border-border rounded-lg overflow-hidden">
               <div className="p-4 flex flex-wrap items-center gap-3 border-b border-border">
