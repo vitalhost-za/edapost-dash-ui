@@ -1,4 +1,10 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import {
+  checkWarmupVolumeCap,
+  incrementWarmupCounter,
+  advanceWarmupDays,
+  prioritizeByEngagement,
+} from "./warmup.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
