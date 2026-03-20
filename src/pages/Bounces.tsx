@@ -47,6 +47,11 @@ export default function Bounces() {
   const [addSuppEmail, setAddSuppEmail] = useState("");
   const [showAddSupp, setShowAddSupp] = useState(false);
 
+  // Complaints state
+  const [complaintSearch, setComplaintSearch] = useState("");
+  const [complaintDateRange, setComplaintDateRange] = useState("7d");
+  const [complaintFeedbackType, setComplaintFeedbackType] = useState("all");
+
   // Bounces query
   const { data: bounces, isLoading: bouncesLoading } = useQuery({
     queryKey: ["bounces", typeFilter, search],
@@ -69,6 +74,40 @@ export default function Bounces() {
       const { data, error } = await query;
       if (error) throw error;
       return data as Suppression[];
+    },
+  });
+
+  // Complaints query — from email_logs where event_type = 'complaint'
+  const { data: complaints, isLoading: complaintsLoading } = useQuery({
+    queryKey: ["complaints", complaintSearch, complaintDateRange, complaintFeedbackType],
+    queryFn: async () => {
+      const dateMap: Record<string, Date> = {
+        "24h": subHours(new Date(), 24),
+        "7d": subDays(new Date(), 7),
+        "30d": subDays(new Date(), 30),
+        "90d": subDays(new Date(), 90),
+      };
+      const since = dateMap[complaintDateRange] || subDays(new Date(), 7);
+
+      let query = supabase
+        .from("email_logs")
+        .select("*")
+        .eq("event_type", "complaint")
+        .gte("created_at", since.toISOString())
+        .order("created_at", { ascending: false });
+
+      if (complaintSearch.trim()) {
+        query = query.ilike("to_address", `%${complaintSearch.trim()}%`);
+      }
+
+      if (complaintFeedbackType !== "all") {
+        // feedback type stored in metadata->feedback_type
+        query = query.contains("metadata", { feedback_type: complaintFeedbackType });
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return data;
     },
   });
 
