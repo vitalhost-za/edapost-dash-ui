@@ -416,7 +416,7 @@ Deno.serve(async (req) => {
 
     return new Response(
       JSON.stringify({
-        processed: queuedEmails.length,
+        processed: processableEmails.length,
         ...results,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
