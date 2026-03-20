@@ -642,6 +642,30 @@ async function processEmail(
       const responseCode = codeMatch ? codeMatch[1] : null;
       const isHardBounce = responseCode && ["550", "551", "552", "553", "554", "555", "521", "556"].includes(responseCode);
 
+      // Detect FBL/complaint indicators in SMTP response
+      const errorText = (smtpResult.error || smtpResult.response || "").toLowerCase();
+      const isComplaint = /spam|complaint|abuse|unsolicited|junk|blocked.*policy|fbl|feedback.*loop|reported|unwanted/.test(errorText);
+
+      if (isComplaint) {
+        // Process as complaint via process-complaints
+        try {
+          await supabase.functions.invoke("process-complaints", {
+            body: {
+              user_id: userId,
+              email: toAddress,
+              from_address: fromAddress,
+              feedback_type: "abuse",
+              source: "smtp-response",
+              original_message_id: `<${messageId}>`,
+              smtp_response: smtpResult.error || smtpResult.response,
+              smtp_server_id: smtpServerId,
+            },
+          });
+        } catch (complaintErr) {
+          console.error("Failed to invoke process-complaints:", complaintErr);
+        }
+      }
+
       if (isHardBounce || newAttempts >= maxAttempts) {
         // Permanent failure
         await supabase
@@ -656,7 +680,7 @@ async function processEmail(
         // Record bounce in email_logs
         await supabase.from("email_logs").insert({
           user_id: userId,
-          event_type: isHardBounce ? "bounced" : "failed",
+          event_type: isComplaint ? "complaint" : (isHardBounce ? "bounced" : "failed"),
           from_address: fromAddress,
           to_address: toAddress,
           subject,
@@ -666,19 +690,21 @@ async function processEmail(
           smtp_server_id: smtpServerId,
         });
 
-        // Call process-bounces for classification & auto-suppression
-        try {
-          await supabase.functions.invoke("process-bounces", {
-            body: {
-              user_id: userId,
-              email: toAddress,
-              response_code: responseCode,
-              error_text: smtpResult.error || smtpResult.response,
-              smtp_server_id: smtpServerId,
-            },
-          });
-        } catch (bounceErr) {
-          console.error("Failed to invoke process-bounces:", bounceErr);
+        // Call process-bounces for classification & auto-suppression (non-complaint bounces)
+        if (!isComplaint) {
+          try {
+            await supabase.functions.invoke("process-bounces", {
+              body: {
+                user_id: userId,
+                email: toAddress,
+                response_code: responseCode,
+                error_text: smtpResult.error || smtpResult.response,
+                smtp_server_id: smtpServerId,
+              },
+            });
+          } catch (bounceErr) {
+            console.error("Failed to invoke process-bounces:", bounceErr);
+          }
         }
 
         results.failed++;
