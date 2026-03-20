@@ -224,6 +224,7 @@ export default function Bounces() {
         <Tabs defaultValue="bounces">
           <TabsList>
             <TabsTrigger value="bounces">Bounces</TabsTrigger>
+            <TabsTrigger value="complaints">Complaints</TabsTrigger>
             <TabsTrigger value="suppression">Suppression List</TabsTrigger>
           </TabsList>
 
