@@ -13,9 +13,9 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Download, Upload, Trash2, ShieldBan, Search, Loader2, Plus, AlertTriangle, Ban } from "lucide-react";
+import { Download, Upload, Trash2, ShieldBan, Search, Loader2, Plus, AlertTriangle, Ban, MessageSquareWarning } from "lucide-react";
 import { toast } from "sonner";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, subDays, subHours } from "date-fns";
 
 interface Bounce {
   id: string;
@@ -47,6 +47,11 @@ export default function Bounces() {
   const [addSuppEmail, setAddSuppEmail] = useState("");
   const [showAddSupp, setShowAddSupp] = useState(false);
 
+  // Complaints state
+  const [complaintSearch, setComplaintSearch] = useState("");
+  const [complaintDateRange, setComplaintDateRange] = useState("7d");
+  const [complaintFeedbackType, setComplaintFeedbackType] = useState("all");
+
   // Bounces query
   const { data: bounces, isLoading: bouncesLoading } = useQuery({
     queryKey: ["bounces", typeFilter, search],
@@ -69,6 +74,40 @@ export default function Bounces() {
       const { data, error } = await query;
       if (error) throw error;
       return data as Suppression[];
+    },
+  });
+
+  // Complaints query — from email_logs where event_type = 'complaint'
+  const { data: complaints, isLoading: complaintsLoading } = useQuery({
+    queryKey: ["complaints", complaintSearch, complaintDateRange, complaintFeedbackType],
+    queryFn: async () => {
+      const dateMap: Record<string, Date> = {
+        "24h": subHours(new Date(), 24),
+        "7d": subDays(new Date(), 7),
+        "30d": subDays(new Date(), 30),
+        "90d": subDays(new Date(), 90),
+      };
+      const since = dateMap[complaintDateRange] || subDays(new Date(), 7);
+
+      let query = supabase
+        .from("email_logs")
+        .select("*")
+        .eq("event_type", "complaint")
+        .gte("created_at", since.toISOString())
+        .order("created_at", { ascending: false });
+
+      if (complaintSearch.trim()) {
+        query = query.ilike("to_address", `%${complaintSearch.trim()}%`);
+      }
+
+      if (complaintFeedbackType !== "all") {
+        // feedback type stored in metadata->feedback_type
+        query = query.contains("metadata", { feedback_type: complaintFeedbackType });
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return data;
     },
   });
 
@@ -165,11 +204,12 @@ export default function Bounces() {
         <h1 className="text-2xl font-bold tracking-tight">Bounce & Suppression Management</h1>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
           {[
             { label: "Total Bounces", value: bounceStats.total, icon: AlertTriangle, color: "text-warning" },
             { label: "Hard Bounces", value: bounceStats.hard, icon: Ban, color: "text-destructive" },
             { label: "Soft Bounces", value: bounceStats.soft, icon: AlertTriangle, color: "text-warning" },
+            { label: "Complaints", value: complaints?.length ?? 0, icon: MessageSquareWarning, color: "text-destructive" },
             { label: "Suppressed", value: suppressions?.length ?? 0, icon: ShieldBan, color: "text-primary" },
           ].map((s) => (
             <div key={s.label} className="bg-card border border-border rounded-lg p-4">
@@ -185,6 +225,7 @@ export default function Bounces() {
         <Tabs defaultValue="bounces">
           <TabsList>
             <TabsTrigger value="bounces">Bounces</TabsTrigger>
+            <TabsTrigger value="complaints">Complaints</TabsTrigger>
             <TabsTrigger value="suppression">Suppression List</TabsTrigger>
           </TabsList>
 
@@ -275,7 +316,96 @@ export default function Bounces() {
             </div>
           </TabsContent>
 
-          {/* Suppression Tab */}
+          {/* Complaints Tab */}
+          <TabsContent value="complaints" className="mt-4">
+            <div className="bg-card border border-border rounded-lg overflow-hidden">
+              <div className="p-4 flex flex-wrap items-center gap-3 border-b border-border">
+                <div className="relative flex-1 min-w-[200px]">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by recipient email"
+                    className="pl-9 bg-transparent"
+                    value={complaintSearch}
+                    onChange={(e) => setComplaintSearch(e.target.value)}
+                  />
+                </div>
+                <Select value={complaintFeedbackType} onValueChange={setComplaintFeedbackType}>
+                  <SelectTrigger className="w-[140px]"><SelectValue placeholder="Feedback Type" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Types</SelectItem>
+                    <SelectItem value="abuse">Abuse</SelectItem>
+                    <SelectItem value="fraud">Fraud</SelectItem>
+                    <SelectItem value="virus">Virus</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                    <SelectItem value="not-spam">Not Spam</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={complaintDateRange} onValueChange={setComplaintDateRange}>
+                  <SelectTrigger className="w-[130px]"><SelectValue placeholder="Date Range" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="24h">Last 24 hours</SelectItem>
+                    <SelectItem value="7d">Last 7 days</SelectItem>
+                    <SelectItem value="30d">Last 30 days</SelectItem>
+                    <SelectItem value="90d">Last 90 days</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {complaintsLoading ? (
+                <div className="flex items-center justify-center py-16">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : complaints && complaints.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border">
+                        <th className="p-3 text-left text-xs font-medium text-muted-foreground">Recipient</th>
+                        <th className="p-3 text-left text-xs font-medium text-muted-foreground">From</th>
+                        <th className="p-3 text-left text-xs font-medium text-muted-foreground">Feedback Type</th>
+                        <th className="p-3 text-left text-xs font-medium text-muted-foreground">Source</th>
+                        <th className="p-3 text-left text-xs font-medium text-muted-foreground">Response</th>
+                        <th className="p-3 text-left text-xs font-medium text-muted-foreground">Date</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {complaints.map((c) => {
+                        const meta = (c.metadata || {}) as Record<string, string>;
+                        return (
+                          <tr key={c.id} className="border-b border-border hover:bg-accent/30 transition-colors">
+                            <td className="p-3 font-medium">{c.to_address}</td>
+                            <td className="p-3 text-muted-foreground">{c.from_address}</td>
+                            <td className="p-3">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-destructive/10 text-destructive">
+                                <MessageSquareWarning className="h-3 w-3" />
+                                {meta.feedback_type || "abuse"}
+                              </span>
+                            </td>
+                            <td className="p-3 text-muted-foreground text-xs">{meta.source || "fbl"}</td>
+                            <td className="p-3 text-muted-foreground max-w-[200px] truncate text-xs">{c.smtp_response || "—"}</td>
+                            <td className="p-3 text-muted-foreground text-xs">
+                              {formatDistanceToNow(new Date(c.created_at), { addSuffix: true })}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-16 text-center">
+                  <div className="p-3 rounded-xl bg-muted mb-3">
+                    <MessageSquareWarning className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <p className="text-sm font-medium">No complaints recorded</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    FBL complaints and spam reports will appear here automatically.
+                  </p>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
           <TabsContent value="suppression" className="mt-4">
             <div className="bg-card border border-border rounded-lg overflow-hidden">
               <div className="p-4 flex flex-wrap items-center gap-3 border-b border-border">
