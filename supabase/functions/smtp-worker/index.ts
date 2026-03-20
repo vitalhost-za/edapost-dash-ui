@@ -484,6 +484,31 @@ async function processEmail(
     // Extract recipient domain for rate limiting
     const recipientDomain = toAddress.split("@")[1]?.toLowerCase() || "unknown";
 
+    // Check warmup volume cap (if warmup is active for this user)
+    if (warmupUserIds.has(userId) && smtpServerId) {
+      const cacheKey = `${userId}:${smtpServerId}`;
+      if (!warmupCache[cacheKey]) {
+        warmupCache[cacheKey] = await checkWarmupVolumeCap(supabase, userId, smtpServerId);
+      }
+      const warmupStatus = warmupCache[cacheKey];
+
+      if (warmupStatus.isWarmingUp && !warmupStatus.allowed) {
+        // Defer — retry later (spread throughout the day)
+        const retryAt = new Date(Date.now() + 15 * 60 * 1000).toISOString(); // Retry in 15 min
+        await supabase
+          .from("email_queue")
+          .update({
+            status: "deferred",
+            error_message: warmupStatus.reason || "Warmup volume cap reached",
+            next_retry_at: retryAt,
+          })
+          .eq("id", emailId);
+
+        results.warmupDeferred++;
+        return;
+      }
+    }
+
     // Check domain rate limit
     const rateCheck = await checkDomainRateLimit(supabase, userId, recipientDomain);
     if (!rateCheck.allowed) {
