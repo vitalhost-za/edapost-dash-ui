@@ -435,7 +435,9 @@ async function processEmail(
   supabase: ReturnType<typeof createClient>,
   email: Record<string, unknown>,
   smtpServers: Record<string, { hostname: string; ip_address: string; port: number; tls_enabled: boolean }>,
-  results: { sent: number; failed: number; deferred: number; rateLimited: number }
+  results: { sent: number; failed: number; deferred: number; rateLimited: number; warmupDeferred: number },
+  warmupUserIds: Set<string>,
+  warmupCache: Record<string, Awaited<ReturnType<typeof checkWarmupVolumeCap>>>
 ): Promise<void> {
   const emailId = email.id as string;
   const userId = email.user_id as string;
