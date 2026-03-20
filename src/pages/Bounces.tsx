@@ -204,11 +204,12 @@ export default function Bounces() {
         <h1 className="text-2xl font-bold tracking-tight">Bounce & Suppression Management</h1>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
           {[
             { label: "Total Bounces", value: bounceStats.total, icon: AlertTriangle, color: "text-warning" },
             { label: "Hard Bounces", value: bounceStats.hard, icon: Ban, color: "text-destructive" },
             { label: "Soft Bounces", value: bounceStats.soft, icon: AlertTriangle, color: "text-warning" },
+            { label: "Complaints", value: complaints?.length ?? 0, icon: MessageSquareWarning, color: "text-destructive" },
             { label: "Suppressed", value: suppressions?.length ?? 0, icon: ShieldBan, color: "text-primary" },
           ].map((s) => (
             <div key={s.label} className="bg-card border border-border rounded-lg p-4">
