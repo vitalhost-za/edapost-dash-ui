@@ -11,3 +11,9 @@ verify_jwt = false
 
 [functions.smtp-worker]
 verify_jwt = false
+
+[functions.process-bounces]
+verify_jwt = false
+
+[functions.process-complaints]
+verify_jwt = false
