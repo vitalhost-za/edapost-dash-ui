@@ -626,6 +626,13 @@ async function processEmail(
         domain: toAddress.split("@")[1]?.toLowerCase() || "unknown",
       });
 
+      // Increment warmup counter if active
+      if (warmupUserIds.has(userId) && smtpServerId) {
+        await incrementWarmupCounter(supabase, userId, smtpServerId);
+        // Invalidate warmup cache so next email rechecks
+        delete warmupCache[`${userId}:${smtpServerId}`];
+      }
+
       results.sent++;
     } else {
       // Failure: determine if retryable
