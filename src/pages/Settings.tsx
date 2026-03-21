@@ -43,10 +43,15 @@ interface UserSettings {
   alert_bounce_rate: number | null;
   alert_complaint_rate: number | null;
   alert_queue_depth: number | null;
+  alert_delivery_rate: number | null;
+  alert_tls_expiry_days: number | null;
+  pagerduty_routing_key: string | null;
   notify_bounces: boolean;
   notify_complaints: boolean;
   notify_queue_full: boolean;
   notify_server_down: boolean;
+  notify_tls_expiry: boolean;
+  notify_delivery_rate: boolean;
   warmup_enabled: boolean;
   worker_concurrency: number;
   worker_batch_size: number;
