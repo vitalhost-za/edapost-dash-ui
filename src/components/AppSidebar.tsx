@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, PenSquare, Megaphone, ListOrdered,
-  ScrollText, AlertTriangle, ShieldBan, Globe, BarChart3, Settings, Mail, Server, Webhook, LayoutTemplate, TrendingUp, Users,
+  ScrollText, AlertTriangle, ShieldBan, Globe, BarChart3, Settings, Mail, Server, Webhook, LayoutTemplate, TrendingUp, Users, Activity,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -24,6 +24,7 @@ const navItems = [
   { title: "Suppression List", url: "/suppression", icon: ShieldBan },
   { title: "DNS Health", url: "/dns", icon: Globe },
   { title: "Analytics", url: "/analytics", icon: BarChart3 },
+  { title: "Monitoring", url: "/monitoring", icon: Activity },
   { title: "Webhook Log", url: "/webhook-deliveries", icon: Webhook },
   { title: "Settings", url: "/settings", icon: Settings },
 ];

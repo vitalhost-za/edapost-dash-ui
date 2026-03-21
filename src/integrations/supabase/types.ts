@@ -874,6 +874,7 @@ export type Database = {
           postfix_version: string | null
           queue_size: number
           status: string
+          tls_cert_expiry: string | null
           tls_enabled: boolean
           updated_at: string
           user_id: string
@@ -890,6 +891,7 @@ export type Database = {
           postfix_version?: string | null
           queue_size?: number
           status?: string
+          tls_cert_expiry?: string | null
           tls_enabled?: boolean
           updated_at?: string
           user_id: string
@@ -906,6 +908,7 @@ export type Database = {
           postfix_version?: string | null
           queue_size?: number
           status?: string
+          tls_cert_expiry?: string | null
           tls_enabled?: boolean
           updated_at?: string
           user_id?: string
@@ -943,15 +946,20 @@ export type Database = {
         Row: {
           alert_bounce_rate: number | null
           alert_complaint_rate: number | null
+          alert_delivery_rate: number | null
           alert_email: string | null
           alert_queue_depth: number | null
+          alert_tls_expiry_days: number | null
           created_at: string
           default_from_address: string
           id: string
           notify_bounces: boolean
           notify_complaints: boolean
+          notify_delivery_rate: boolean
           notify_queue_full: boolean
           notify_server_down: boolean
+          notify_tls_expiry: boolean
+          pagerduty_routing_key: string | null
           slack_webhook_url: string | null
           smtp_connection_limit: number | null
           smtp_hostname: string | null
@@ -969,15 +977,20 @@ export type Database = {
         Insert: {
           alert_bounce_rate?: number | null
           alert_complaint_rate?: number | null
+          alert_delivery_rate?: number | null
           alert_email?: string | null
           alert_queue_depth?: number | null
+          alert_tls_expiry_days?: number | null
           created_at?: string
           default_from_address?: string
           id?: string
           notify_bounces?: boolean
           notify_complaints?: boolean
+          notify_delivery_rate?: boolean
           notify_queue_full?: boolean
           notify_server_down?: boolean
+          notify_tls_expiry?: boolean
+          pagerduty_routing_key?: string | null
           slack_webhook_url?: string | null
           smtp_connection_limit?: number | null
           smtp_hostname?: string | null
@@ -995,15 +1008,20 @@ export type Database = {
         Update: {
           alert_bounce_rate?: number | null
           alert_complaint_rate?: number | null
+          alert_delivery_rate?: number | null
           alert_email?: string | null
           alert_queue_depth?: number | null
+          alert_tls_expiry_days?: number | null
           created_at?: string
           default_from_address?: string
           id?: string
           notify_bounces?: boolean
           notify_complaints?: boolean
+          notify_delivery_rate?: boolean
           notify_queue_full?: boolean
           notify_server_down?: boolean
+          notify_tls_expiry?: boolean
+          pagerduty_routing_key?: string | null
           slack_webhook_url?: string | null
           smtp_connection_limit?: number | null
           smtp_hostname?: string | null
