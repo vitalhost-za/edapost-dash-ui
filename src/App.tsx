@@ -23,6 +23,7 @@ import WebhookDeliveries from "./pages/WebhookDeliveries";
 import Templates from "./pages/Templates";
 import CampaignAnalytics from "./pages/CampaignAnalytics";
 import ContactLists from "./pages/ContactLists";
+import Monitoring from "./pages/Monitoring";
 
 const queryClient = new QueryClient();
 
@@ -49,6 +50,7 @@ const App = () => (
             <Route path="/suppression" element={<ProtectedRoute><Suppression /></ProtectedRoute>} />
             <Route path="/dns" element={<ProtectedRoute><DnsHealth /></ProtectedRoute>} />
             <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
+            <Route path="/monitoring" element={<ProtectedRoute><Monitoring /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
             <Route path="/webhook-deliveries" element={<ProtectedRoute><WebhookDeliveries /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
