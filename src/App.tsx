@@ -50,6 +50,7 @@ const App = () => (
             <Route path="/suppression" element={<ProtectedRoute><Suppression /></ProtectedRoute>} />
             <Route path="/dns" element={<ProtectedRoute><DnsHealth /></ProtectedRoute>} />
             <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
+            <Route path="/monitoring" element={<ProtectedRoute><Monitoring /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
             <Route path="/webhook-deliveries" element={<ProtectedRoute><WebhookDeliveries /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />

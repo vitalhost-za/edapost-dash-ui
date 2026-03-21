@@ -424,7 +424,7 @@ export default function Monitoring() {
                               )}
                               <div>
                                 <p className="font-medium">{srv.hostname}</p>
-                                <p className="text-xs text-muted-foreground font-mono">{srv.ip_address}:{srv.port}</p>
+                                <p className="text-xs text-muted-foreground font-mono">{String(srv.ip_address)}:{srv.port}</p>
                               </div>
                             </div>
                             <span className={cn(

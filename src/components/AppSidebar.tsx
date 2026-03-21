@@ -24,6 +24,7 @@ const navItems = [
   { title: "Suppression List", url: "/suppression", icon: ShieldBan },
   { title: "DNS Health", url: "/dns", icon: Globe },
   { title: "Analytics", url: "/analytics", icon: BarChart3 },
+  { title: "Monitoring", url: "/monitoring", icon: Activity },
   { title: "Webhook Log", url: "/webhook-deliveries", icon: Webhook },
   { title: "Settings", url: "/settings", icon: Settings },
 ];
