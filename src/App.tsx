@@ -23,6 +23,7 @@ import WebhookDeliveries from "./pages/WebhookDeliveries";
 import Templates from "./pages/Templates";
 import CampaignAnalytics from "./pages/CampaignAnalytics";
 import ContactLists from "./pages/ContactLists";
+import Monitoring from "./pages/Monitoring";
 
 const queryClient = new QueryClient();
 
