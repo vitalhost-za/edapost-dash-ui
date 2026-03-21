@@ -458,13 +458,18 @@ export default function SettingsPage() {
   const handleSaveNotifications = () => saveMutation.mutate({
     slack_webhook_url: settings.slack_webhook_url,
     alert_email: settings.alert_email,
+    pagerduty_routing_key: settings.pagerduty_routing_key,
     alert_bounce_rate: settings.alert_bounce_rate,
     alert_complaint_rate: settings.alert_complaint_rate,
     alert_queue_depth: settings.alert_queue_depth,
+    alert_delivery_rate: settings.alert_delivery_rate,
+    alert_tls_expiry_days: settings.alert_tls_expiry_days,
     notify_bounces: settings.notify_bounces,
     notify_complaints: settings.notify_complaints,
     notify_queue_full: settings.notify_queue_full,
     notify_server_down: settings.notify_server_down,
+    notify_tls_expiry: settings.notify_tls_expiry,
+    notify_delivery_rate: settings.notify_delivery_rate,
   });
 
   const handleSaveWarmup = () => saveMutation.mutate({
