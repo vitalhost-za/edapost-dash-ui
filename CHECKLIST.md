@@ -12,8 +12,8 @@
 
 <!-- Update these counters as items are checked off -->
 - **Total tasks:** 96
-- **Completed:** 45
-- **Remaining:** 51
+- **Completed:** 56
+- **Remaining:** 40
 
 ---
 
@@ -108,7 +108,7 @@
 - [x] ⚛️ **App** — Implement result recording (success, bounce, error)
 - [x] ⚛️ **App** — Add configurable worker concurrency
 - [x] ⚛️ **App** — Implement retry logic with exponential backoff
-- [ ] ⚛️ **App** — Write unit tests for the worker
+- [x] ⚛️ **App** — Write unit tests for the worker
 
 ### 6d. Rate Limiting
 - [x] ⚛️ **App** — Implement per-domain sending rate limits
@@ -171,19 +171,19 @@
 - [x] ⚛️ **App** — Track delivery success rate (from Postfix logs)
 - [x] ⚛️ **App** — Track bounce rate (from bounce processor)
 - [x] ⚛️ **App** — Track complaint rate (from FBL processor)
-- [ ] ⚛️ **App** — Track queue depth (Redis)
+- [x] ⚛️ **App** — Track queue depth (Redis)
 - [ ] ⚛️ **App** — Track queue latency / oldest job age (Redis)
 
 ### 9c. Dashboards & Alerts
-- [ ] ⚛️ **App** — Create Grafana dashboard for email metrics
-- [ ] ⚛️ **App** — Create Grafana dashboard for server health
-- [ ] ⚛️ **App** — Configure alerts: delivery rate < 95%
-- [ ] ⚛️ **App** — Configure alerts: bounce rate > 2%
-- [ ] ⚛️ **App** — Configure alerts: complaint rate > 0.1%
-- [ ] ⚛️ **App** — Configure alerts: queue depth > 10,000
-- [ ] ⚛️ **App** — Configure alerts: TLS cert expiry < 14 days
-- [ ] ⚛️ **App** — Configure alerts: Postfix process down
-- [ ] ⚛️ **App** — Set up alert notifications (Slack / email / PagerDuty)
+- [x] ⚛️ **App** — Create Grafana dashboard for email metrics
+- [x] ⚛️ **App** — Create Grafana dashboard for server health
+- [x] ⚛️ **App** — Configure alerts: delivery rate < 95%
+- [x] ⚛️ **App** — Configure alerts: bounce rate > 2%
+- [x] ⚛️ **App** — Configure alerts: complaint rate > 0.1%
+- [x] ⚛️ **App** — Configure alerts: queue depth > 10,000
+- [x] ⚛️ **App** — Configure alerts: TLS cert expiry < 14 days
+- [x] ⚛️ **App** — Configure alerts: Postfix process down
+- [x] ⚛️ **App** — Set up alert notifications (Slack / email / PagerDuty)
 
 ### 9d. Logging
 - [ ] 🖥️ **Server** — Configure structured Postfix logging
@@ -240,4 +240,4 @@
 
 ---
 
-*Last updated: 2026-03-20*
+*Last updated: 2026-03-21*
