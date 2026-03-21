@@ -766,6 +766,7 @@ export default function SettingsPage() {
           {/* Notifications */}
           <TabsContent value="notifications" className="mt-6">
             <div className="bg-card border border-border rounded-lg p-5 space-y-5 max-w-2xl">
+              <h3 className="text-sm font-medium">Notification Channels</h3>
               <div className="space-y-2">
                 <Label>Slack Webhook URL</Label>
                 <Input
@@ -782,14 +783,25 @@ export default function SettingsPage() {
                   onChange={(e) => updateField("alert_email", e.target.value)}
                 />
               </div>
+              <div className="space-y-2">
+                <Label>PagerDuty Routing Key</Label>
+                <Input
+                  placeholder="Routing key from PagerDuty service integration"
+                  value={(settings as any).pagerduty_routing_key ?? ""}
+                  onChange={(e) => updateField("pagerduty_routing_key", e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">Events API v2 routing key for PagerDuty incident creation.</p>
+              </div>
 
               <h3 className="text-sm font-medium pt-2">Notification Events</h3>
               <div className="space-y-3">
                 {[
+                  { key: "notify_delivery_rate", label: "Delivery rate alerts", desc: "Alert when delivery rate drops below threshold" },
                   { key: "notify_bounces", label: "Bounce alerts", desc: "Get notified when bounce rate exceeds threshold" },
                   { key: "notify_complaints", label: "Complaint alerts", desc: "Get notified about spam complaints" },
                   { key: "notify_queue_full", label: "Queue depth alerts", desc: "Alert when queue exceeds threshold" },
-                  { key: "notify_server_down", label: "Server down alerts", desc: "Alert when an SMTP server goes offline" },
+                  { key: "notify_tls_expiry", label: "TLS cert expiry alerts", desc: "Alert when TLS certificate is close to expiry" },
+                  { key: "notify_server_down", label: "Postfix process down", desc: "Alert when an SMTP server goes offline" },
                 ].map((n) => (
                   <div key={n.key} className="flex items-center justify-between bg-secondary rounded-md p-3">
                     <div>
@@ -807,16 +819,24 @@ export default function SettingsPage() {
               <h3 className="text-sm font-medium pt-2">Alert Thresholds</h3>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-xs">Bounce Rate %</Label>
-                  <Input type="number" step="0.1" value={settings.alert_bounce_rate ?? 5} onChange={(e) => updateField("alert_bounce_rate", parseFloat(e.target.value) || 5)} />
+                  <Label className="text-xs">Delivery Rate % (min)</Label>
+                  <Input type="number" step="0.1" value={(settings as any).alert_delivery_rate ?? 95} onChange={(e) => updateField("alert_delivery_rate", parseFloat(e.target.value) || 95)} />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs">Complaint Rate %</Label>
+                  <Label className="text-xs">Bounce Rate % (max)</Label>
+                  <Input type="number" step="0.1" value={settings.alert_bounce_rate ?? 2} onChange={(e) => updateField("alert_bounce_rate", parseFloat(e.target.value) || 2)} />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">Complaint Rate % (max)</Label>
                   <Input type="number" step="0.01" value={settings.alert_complaint_rate ?? 0.1} onChange={(e) => updateField("alert_complaint_rate", parseFloat(e.target.value) || 0.1)} />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs">Queue Depth</Label>
+                  <Label className="text-xs">Queue Depth (max)</Label>
                   <Input type="number" value={settings.alert_queue_depth ?? 10000} onChange={(e) => updateField("alert_queue_depth", parseInt(e.target.value) || 10000)} />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">TLS Expiry (days)</Label>
+                  <Input type="number" value={(settings as any).alert_tls_expiry_days ?? 14} onChange={(e) => updateField("alert_tls_expiry_days", parseInt(e.target.value) || 14)} />
                 </div>
               </div>
 
