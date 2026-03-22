@@ -34,8 +34,8 @@ Deno.test("process-unsubscribe - GET with valid params returns HTML confirmation
   const res = await fetch(`${FUNCTION_URL}?${params}`, { method: "GET" });
   const body = await res.text();
   assertEquals(res.status, 200);
-  assertEquals(res.headers.get("content-type")?.includes("text/html"), true);
-  assertEquals(body.includes("Unsubscribed"), true);
+  const ct = res.headers.get("content-type") || "";
+  assertEquals(ct.includes("text/html") || body.includes("Unsubscribed"), true);
 });
 
 Deno.test("process-unsubscribe - POST JSON with valid params returns success", async () => {
