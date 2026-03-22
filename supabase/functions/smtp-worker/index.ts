@@ -638,6 +638,15 @@ async function processEmail(
     // Generate message ID
     const messageId = `${crypto.randomUUID()}@edapost`;
 
+    // Build List-Unsubscribe headers for bulk emails
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
+    const unsubParams = new URLSearchParams({ email: toAddress, uid: userId });
+    const unsubUrl = `${SUPABASE_URL}/functions/v1/process-unsubscribe?${unsubParams}`;
+    const extraHeaders: Record<string, string> = {
+      "List-Unsubscribe": `<${unsubUrl}>`,
+      "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+    };
+
     // Build MIME message
     const mimeData = buildMimeMessage({
       from: fromAddress,
@@ -647,6 +656,7 @@ async function processEmail(
       plainBody,
       messageId,
       attachments: attachments.length > 0 ? attachments : undefined,
+      extraHeaders,
     });
 
     // Send via SMTP
