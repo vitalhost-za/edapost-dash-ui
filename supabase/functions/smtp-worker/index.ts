@@ -12,6 +12,62 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// ─── CSS Inliner (lightweight for edge function) ──────────────────────────────
+
+function inlineCSSInHtml(html: string): string {
+  const rules: { selector: string; declarations: string; specificity: number }[] = [];
+  const styleRegex = /<style[^>]*>([\s\S]*?)<\/style>/gi;
+
+  let m;
+  while ((m = styleRegex.exec(html)) !== null) {
+    const ruleRegex = /([^{]+)\{([^}]+)\}/g;
+    let rm;
+    while ((rm = ruleRegex.exec(m[1])) !== null) {
+      for (const sel of rm[1].split(",")) {
+        const s = sel.trim();
+        if (s && !s.startsWith("@")) {
+          const idC = (s.match(/#/g) || []).length;
+          const clC = (s.match(/\./g) || []).length;
+          const elC = (s.match(/(^|[\s>+~])[\w-]+/g) || []).length;
+          rules.push({ selector: s, declarations: rm[2].trim(), specificity: idC * 100 + clC * 10 + elC });
+        }
+      }
+    }
+  }
+
+  if (rules.length === 0) return html;
+  rules.sort((a, b) => a.specificity - b.specificity);
+
+  let result = html.replace(styleRegex, "");
+  result = result.replace(/<([a-zA-Z][\w-]*)([^>]*)>/g, (full, tag: string, attrs: string) => {
+    const cls = (attrs.match(/class\s*=\s*"([^"]*)"/i) || [])[1] || "";
+    const id = (attrs.match(/id\s*=\s*"([^"]*)"/i) || [])[1] || "";
+    const existing = (attrs.match(/style\s*=\s*"([^"]*)"/i) || [])[1] || "";
+    const classes = cls.split(/\s+/);
+
+    const matched: string[] = [];
+    for (const r of rules) {
+      const s = r.selector;
+      let hit = false;
+      if (s.startsWith("#")) hit = id === s.slice(1);
+      else if (s.startsWith(".")) hit = classes.includes(s.slice(1));
+      else if (/^[a-zA-Z][\w-]*$/.test(s)) hit = tag.toLowerCase() === s.toLowerCase();
+      else {
+        const tc = s.match(/^([a-zA-Z][\w-]*)\.([a-zA-Z][\w-]*)$/);
+        if (tc) hit = tag.toLowerCase() === tc[1].toLowerCase() && classes.includes(tc[2]);
+      }
+      if (hit) matched.push(r.declarations);
+    }
+
+    if (matched.length === 0) return full;
+    const inlined = (matched.join("; ") + (existing ? "; " + existing : "")).replace(/;\s*;/g, ";").replace(/;\s*$/, "");
+    if (existing) return `<${tag}${attrs.replace(/style\s*=\s*"[^"]*"/i, `style="${inlined}"`)}>`;
+    return `<${tag}${attrs} style="${inlined}">`;
+  });
+
+  return result;
+}
+
 // ─── MIME Construction ─────────────────────────────────────────────────────────
 
 function generateBoundary(): string {
@@ -26,6 +82,7 @@ function buildMimeMessage(opts: {
   plainBody?: string | null;
   messageId: string;
   attachments?: { fileName: string; contentType: string; base64Data: string }[];
+  extraHeaders?: Record<string, string>;
 }): string {
   const boundary = generateBoundary();
   const altBoundary = generateBoundary();
@@ -40,6 +97,13 @@ function buildMimeMessage(opts: {
   mime += `Message-ID: <${opts.messageId}>\r\n`;
   mime += `MIME-Version: 1.0\r\n`;
   mime += `X-Mailer: EdaPost/1.0\r\n`;
+
+  // Extra headers (List-Unsubscribe, etc.)
+  if (opts.extraHeaders) {
+    for (const [key, value] of Object.entries(opts.extraHeaders)) {
+      mime += `${key}: ${value}\r\n`;
+    }
+  }
 
   if (hasAttachments) {
     mime += `Content-Type: multipart/mixed; boundary="${boundary}"\r\n\r\n`;
@@ -57,12 +121,13 @@ function buildMimeMessage(opts: {
     mime += `${opts.plainBody}\r\n\r\n`;
   }
 
-  // HTML part
+  // HTML part (with inlined CSS)
   if (opts.htmlBody) {
+    const inlinedHtml = inlineCSSInHtml(opts.htmlBody);
     mime += `--${altBoundary}\r\n`;
     mime += `Content-Type: text/html; charset="UTF-8"\r\n`;
     mime += `Content-Transfer-Encoding: quoted-printable\r\n\r\n`;
-    mime += `${opts.htmlBody}\r\n\r\n`;
+    mime += `${inlinedHtml}\r\n\r\n`;
   }
 
   mime += `--${altBoundary}--\r\n`;
@@ -573,6 +638,15 @@ async function processEmail(
     // Generate message ID
     const messageId = `${crypto.randomUUID()}@edapost`;
 
+    // Build List-Unsubscribe headers for bulk emails
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
+    const unsubParams = new URLSearchParams({ email: toAddress, uid: userId });
+    const unsubUrl = `${SUPABASE_URL}/functions/v1/process-unsubscribe?${unsubParams}`;
+    const extraHeaders: Record<string, string> = {
+      "List-Unsubscribe": `<${unsubUrl}>`,
+      "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+    };
+
     // Build MIME message
     const mimeData = buildMimeMessage({
       from: fromAddress,
@@ -582,6 +656,7 @@ async function processEmail(
       plainBody,
       messageId,
       attachments: attachments.length > 0 ? attachments : undefined,
+      extraHeaders,
     });
 
     // Send via SMTP
