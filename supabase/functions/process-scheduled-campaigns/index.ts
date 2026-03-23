@@ -224,8 +224,9 @@ Deno.serve(async (req) => {
   }
 });
 
+// deno-lint-ignore no-explicit-any
 async function selectAbTestWinners(
-  supabase: ReturnType<typeof createClient>
+  supabase: any
 ): Promise<{ id: string; action: string }[]> {
   const results: { id: string; action: string }[] = [];
 
