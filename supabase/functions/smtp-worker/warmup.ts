@@ -139,8 +139,8 @@ export async function incrementWarmupCounter(
 
   if (!warmup) return;
 
-  const newSentToday = (warmup.sent_today || 0) + 1;
-  const dailyLimit = getWarmupDailyLimit(warmup.warmup_day);
+  const newSentToday = ((warmup.sent_today as number) || 0) + 1;
+  const dailyLimit = getWarmupDailyLimit(warmup.warmup_day as number);
 
   await supabase
     .from("ip_warmup")
