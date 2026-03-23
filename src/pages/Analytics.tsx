@@ -311,6 +311,26 @@ export default function Analytics() {
               </div>
             </div>
 
+            {/* Engagement Rates Over Time */}
+            <div className="bg-card border border-border rounded-lg p-5">
+              <h3 className="text-sm font-medium text-foreground mb-4">Engagement Rates Over Time</h3>
+              {engagementTrend.length > 0 ? (
+                <ResponsiveContainer width="100%" height={260}>
+                  <LineChart data={engagementTrend}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                    <XAxis dataKey="label" tick={{ fontSize: 10, className: "fill-muted-foreground" }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize: 10, className: "fill-muted-foreground" }} axisLine={false} tickLine={false} domain={[0, "auto"]} unit="%" />
+                    <Tooltip contentStyle={tooltipStyle} formatter={(value: number) => `${value}%`} />
+                    <Line type="monotone" dataKey="openRate" name="Open Rate" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="clickRate" name="Click Rate" stroke="hsl(262, 83%, 58%)" strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="unsubRate" name="Unsub Rate" stroke="hsl(38, 92%, 50%)" strokeWidth={2} dot={false} />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-[260px] text-sm text-muted-foreground">No engagement data for this period</div>
+              )}
+            </div>
+
             {/* Charts Row 2 */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               {/* Recipient Domains */}
