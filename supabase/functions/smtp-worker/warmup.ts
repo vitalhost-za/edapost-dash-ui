@@ -46,7 +46,7 @@ export interface WarmupStatus {
 }
 
 export async function checkWarmupVolumeCap(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   userId: string,
   smtpServerId: string
 ): Promise<WarmupStatus> {
