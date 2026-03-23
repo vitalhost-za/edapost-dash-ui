@@ -8,7 +8,7 @@ import {
   BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell,
 } from "recharts";
 import {
-  Send, CheckCircle, XCircle, Eye, MousePointerClick, Loader2, TrendingUp, TrendingDown,
+  Send, CheckCircle, XCircle, Eye, MousePointerClick, Loader2, TrendingUp, TrendingDown, UserX,
 } from "lucide-react";
 import { format, subDays, subHours, startOfHour, startOfDay } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -113,16 +113,18 @@ export default function Analytics() {
 
   // Engagement from logs
   const engagement = useMemo(() => {
-    if (!logStats?.length) return { opened: 0, clicked: 0, complained: 0, totalSent: 0 };
+    if (!logStats?.length) return { opened: 0, clicked: 0, complained: 0, unsubscribed: 0, totalSent: 0 };
     const opened = logStats.filter((l) => l.event_type === "opened").length;
     const clicked = logStats.filter((l) => l.event_type === "clicked").length;
     const complained = logStats.filter((l) => l.event_type === "complained").length;
+    const unsubscribed = logStats.filter((l) => l.event_type === "unsubscribed").length;
     const totalSent = logStats.filter((l) => l.event_type === "sent" || l.event_type === "delivered").length;
-    return { opened, clicked, complained, totalSent };
+    return { opened, clicked, complained, unsubscribed, totalSent };
   }, [logStats]);
 
   const openRate = engagement.totalSent > 0 ? ((engagement.opened / engagement.totalSent) * 100).toFixed(1) : "0.0";
   const clickRate = engagement.totalSent > 0 ? ((engagement.clicked / engagement.totalSent) * 100).toFixed(1) : "0.0";
+  const unsubRate = engagement.totalSent > 0 ? ((engagement.unsubscribed / engagement.totalSent) * 100).toFixed(1) : "0.0";
 
   // Delivery trend chart data (aggregated by day or hour)
   const trendData = useMemo(() => {
@@ -151,6 +153,31 @@ export default function Analytics() {
       bounceRate: d.sent > 0 ? +((d.bounced / d.sent) * 100).toFixed(1) : 0,
     }));
   }, [trendData]);
+
+  // Engagement rates over time (open, click, unsubscribe)
+  const engagementTrend = useMemo(() => {
+    if (!logStats?.length) return [];
+    const useHourly = timeRange === "24h";
+    const grouped: Record<string, { sent: number; opened: number; clicked: number; unsubscribed: number }> = {};
+
+    for (const log of logStats) {
+      const key = useHourly
+        ? format(startOfHour(new Date(log.created_at)), "HH:mm")
+        : format(startOfDay(new Date(log.created_at)), "MMM d");
+      if (!grouped[key]) grouped[key] = { sent: 0, opened: 0, clicked: 0, unsubscribed: 0 };
+      if (log.event_type === "sent" || log.event_type === "delivered") grouped[key].sent++;
+      if (log.event_type === "opened") grouped[key].opened++;
+      if (log.event_type === "clicked") grouped[key].clicked++;
+      if (log.event_type === "unsubscribed") grouped[key].unsubscribed++;
+    }
+
+    return Object.entries(grouped).map(([label, v]) => ({
+      label,
+      openRate: v.sent > 0 ? +((v.opened / v.sent) * 100).toFixed(1) : 0,
+      clickRate: v.sent > 0 ? +((v.clicked / v.sent) * 100).toFixed(1) : 0,
+      unsubRate: v.sent > 0 ? +((v.unsubscribed / v.sent) * 100).toFixed(1) : 0,
+    }));
+  }, [logStats, timeRange]);
 
   // Domain distribution from logs
   const domainDistribution = useMemo(() => {
@@ -222,7 +249,7 @@ export default function Analytics() {
         ) : (
           <>
             {/* KPI Cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-7 gap-4">
               {[
                 { label: "Sent", value: totals.sent.toLocaleString(), icon: Send, color: "text-info" },
                 { label: "Delivered", value: totals.delivered.toLocaleString(), icon: CheckCircle, color: "text-success" },
@@ -230,6 +257,7 @@ export default function Analytics() {
                 { label: "Bounce Rate", value: `${bounceRate}%`, icon: TrendingDown, color: "text-destructive" },
                 { label: "Open Rate", value: `${openRate}%`, icon: Eye, color: "text-primary" },
                 { label: "Click Rate", value: `${clickRate}%`, icon: MousePointerClick, color: "text-primary" },
+                { label: "Unsub Rate", value: `${unsubRate}%`, icon: UserX, color: "text-warning" },
               ].map((s) => (
                 <div key={s.label} className="bg-card border border-border rounded-lg p-4">
                   <div className="flex items-center justify-between">
@@ -281,6 +309,26 @@ export default function Analytics() {
                   <div className="flex items-center justify-center h-[220px] text-sm text-muted-foreground">No rate data for this period</div>
                 )}
               </div>
+            </div>
+
+            {/* Engagement Rates Over Time */}
+            <div className="bg-card border border-border rounded-lg p-5">
+              <h3 className="text-sm font-medium text-foreground mb-4">Engagement Rates Over Time</h3>
+              {engagementTrend.length > 0 ? (
+                <ResponsiveContainer width="100%" height={260}>
+                  <LineChart data={engagementTrend}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                    <XAxis dataKey="label" tick={{ fontSize: 10, className: "fill-muted-foreground" }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize: 10, className: "fill-muted-foreground" }} axisLine={false} tickLine={false} domain={[0, "auto"]} unit="%" />
+                    <Tooltip contentStyle={tooltipStyle} formatter={(value: number) => `${value}%`} />
+                    <Line type="monotone" dataKey="openRate" name="Open Rate" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="clickRate" name="Click Rate" stroke="hsl(262, 83%, 58%)" strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="unsubRate" name="Unsub Rate" stroke="hsl(38, 92%, 50%)" strokeWidth={2} dot={false} />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-[260px] text-sm text-muted-foreground">No engagement data for this period</div>
+              )}
             </div>
 
             {/* Charts Row 2 */}
