@@ -174,7 +174,7 @@ export async function advanceWarmupDays(
       daily_limit: getWarmupDailyLimit(newDay),
     };
 
-    if (newDay >= warmup.total_days) {
+    if (newDay >= (warmup.total_days as number)) {
       update.status = "completed";
     }
 
