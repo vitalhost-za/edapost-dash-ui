@@ -8,7 +8,7 @@ import {
   BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell,
 } from "recharts";
 import {
-  Send, CheckCircle, XCircle, Eye, MousePointerClick, Loader2, TrendingUp, TrendingDown,
+  Send, CheckCircle, XCircle, Eye, MousePointerClick, Loader2, TrendingUp, TrendingDown, UserX,
 } from "lucide-react";
 import { format, subDays, subHours, startOfHour, startOfDay } from "date-fns";
 import { cn } from "@/lib/utils";
