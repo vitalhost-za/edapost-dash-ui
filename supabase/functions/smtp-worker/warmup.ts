@@ -71,9 +71,9 @@ export async function checkWarmupVolumeCap(
     };
   }
 
-  const dailyLimit = getWarmupDailyLimit(warmup.warmup_day);
+  const dailyLimit = getWarmupDailyLimit(warmup.warmup_day as number);
   const hourlyCap = getHourlyCap(dailyLimit);
-  const sentToday = warmup.sent_today || 0;
+  const sentToday: number = (warmup.sent_today as number) || 0;
 
   // Count sends this hour from domain_send_tracking
   const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
