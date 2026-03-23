@@ -125,7 +125,7 @@ export async function checkWarmupVolumeCap(
 // ─── Increment Warmup Counter ─────────────────────────────────────────────────
 
 export async function incrementWarmupCounter(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   userId: string,
   smtpServerId: string
 ): Promise<void> {
