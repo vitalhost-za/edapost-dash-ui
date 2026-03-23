@@ -285,10 +285,10 @@ async function checkDomainRateLimit(
       return { allowed: true }; // No rate limits configured
     }
 
-    return await enforceLimit(supabase, userId, recipientDomain, defaultLimit.max_per_minute, defaultLimit.max_per_hour);
+    return await enforceLimit(supabase, userId, recipientDomain, defaultLimit.max_per_minute as number, defaultLimit.max_per_hour as number);
   }
 
-  return await enforceLimit(supabase, userId, recipientDomain, limits.max_per_minute, limits.max_per_hour);
+  return await enforceLimit(supabase, userId, recipientDomain, limits.max_per_minute as number, limits.max_per_hour as number);
 }
 
 async function enforceLimit(
