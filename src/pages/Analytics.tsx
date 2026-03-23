@@ -113,16 +113,18 @@ export default function Analytics() {
 
   // Engagement from logs
   const engagement = useMemo(() => {
-    if (!logStats?.length) return { opened: 0, clicked: 0, complained: 0, totalSent: 0 };
+    if (!logStats?.length) return { opened: 0, clicked: 0, complained: 0, unsubscribed: 0, totalSent: 0 };
     const opened = logStats.filter((l) => l.event_type === "opened").length;
     const clicked = logStats.filter((l) => l.event_type === "clicked").length;
     const complained = logStats.filter((l) => l.event_type === "complained").length;
+    const unsubscribed = logStats.filter((l) => l.event_type === "unsubscribed").length;
     const totalSent = logStats.filter((l) => l.event_type === "sent" || l.event_type === "delivered").length;
-    return { opened, clicked, complained, totalSent };
+    return { opened, clicked, complained, unsubscribed, totalSent };
   }, [logStats]);
 
   const openRate = engagement.totalSent > 0 ? ((engagement.opened / engagement.totalSent) * 100).toFixed(1) : "0.0";
   const clickRate = engagement.totalSent > 0 ? ((engagement.clicked / engagement.totalSent) * 100).toFixed(1) : "0.0";
+  const unsubRate = engagement.totalSent > 0 ? ((engagement.unsubscribed / engagement.totalSent) * 100).toFixed(1) : "0.0";
 
   // Delivery trend chart data (aggregated by day or hour)
   const trendData = useMemo(() => {
