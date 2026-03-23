@@ -260,7 +260,7 @@ async function sendViaSMTP(opts: {
 // ─── Rate Limit Checking ───────────────────────────────────────────────────────
 
 async function checkDomainRateLimit(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   userId: string,
   recipientDomain: string
 ): Promise<{ allowed: boolean; reason?: string }> {
@@ -292,7 +292,7 @@ async function checkDomainRateLimit(
 }
 
 async function enforceLimit(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   userId: string,
   domain: string,
   maxPerMinute: number,
@@ -497,7 +497,7 @@ Deno.serve(async (req) => {
 });
 
 async function processEmail(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   email: Record<string, unknown>,
   smtpServers: Record<string, { hostname: string; ip_address: string; port: number; tls_enabled: boolean }>,
   results: { sent: number; failed: number; deferred: number; rateLimited: number; warmupDeferred: number },
