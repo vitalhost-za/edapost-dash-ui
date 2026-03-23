@@ -283,8 +283,9 @@ async function selectAbTestWinners(
   return results;
 }
 
+// deno-lint-ignore no-explicit-any
 async function checkRecurrenceEligible(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   campaign: Record<string, unknown>
 ): Promise<boolean> {
   if (typeof campaign.recurrence_count === "number" && campaign.recurrence_count <= 0) return false;

@@ -99,8 +99,9 @@ Deno.serve(async (req) => {
   }
 });
 
+// deno-lint-ignore no-explicit-any
 async function dispatchWebhooks(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   userId: string,
   eventType: string,
   eventData: Record<string, unknown>
