@@ -79,7 +79,7 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      userId = claims.claims.sub as string;
+      userId = authUser.id;
       const body = await req.json();
       if (!body.event_type) {
         return new Response(
