@@ -1,3 +1,4 @@
+// deno-lint-ignore-file no-explicit-any
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 // ─── Warmup Schedule ──────────────────────────────────────────────────────────
@@ -45,7 +46,7 @@ export interface WarmupStatus {
 }
 
 export async function checkWarmupVolumeCap(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   userId: string,
   smtpServerId: string
 ): Promise<WarmupStatus> {
@@ -70,9 +71,9 @@ export async function checkWarmupVolumeCap(
     };
   }
 
-  const dailyLimit = getWarmupDailyLimit(warmup.warmup_day);
+  const dailyLimit = getWarmupDailyLimit(warmup.warmup_day as number);
   const hourlyCap = getHourlyCap(dailyLimit);
-  const sentToday = warmup.sent_today || 0;
+  const sentToday: number = (warmup.sent_today as number) || 0;
 
   // Count sends this hour from domain_send_tracking
   const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
@@ -124,7 +125,7 @@ export async function checkWarmupVolumeCap(
 // ─── Increment Warmup Counter ─────────────────────────────────────────────────
 
 export async function incrementWarmupCounter(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   userId: string,
   smtpServerId: string
 ): Promise<void> {
@@ -138,8 +139,8 @@ export async function incrementWarmupCounter(
 
   if (!warmup) return;
 
-  const newSentToday = (warmup.sent_today || 0) + 1;
-  const dailyLimit = getWarmupDailyLimit(warmup.warmup_day);
+  const newSentToday = ((warmup.sent_today as number) || 0) + 1;
+  const dailyLimit = getWarmupDailyLimit(warmup.warmup_day as number);
 
   await supabase
     .from("ip_warmup")
@@ -154,7 +155,7 @@ export async function incrementWarmupCounter(
 // Call this once per day (e.g., from a cron) to advance the warmup schedule
 
 export async function advanceWarmupDays(
-  supabase: ReturnType<typeof createClient>
+  supabase: any
 ): Promise<void> {
   const { data: activeWarmups } = await supabase
     .from("ip_warmup")
@@ -162,10 +163,10 @@ export async function advanceWarmupDays(
     .eq("status", "active");
 
   for (const warmup of activeWarmups || []) {
-    const startDate = new Date(warmup.started_at);
+    const startDate = new Date(warmup.started_at as string);
     const now = new Date();
     const daysSinceStart = Math.floor((now.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000)) + 1;
-    const newDay = Math.min(daysSinceStart, warmup.total_days);
+    const newDay = Math.min(daysSinceStart, warmup.total_days as number);
 
     const update: Record<string, unknown> = {
       warmup_day: newDay,
@@ -173,7 +174,7 @@ export async function advanceWarmupDays(
       daily_limit: getWarmupDailyLimit(newDay),
     };
 
-    if (newDay >= warmup.total_days) {
+    if (newDay >= (warmup.total_days as number)) {
       update.status = "completed";
     }
 
@@ -186,7 +187,7 @@ export async function advanceWarmupDays(
 // Engaged = recipients who have opens/clicks in recent logs.
 
 export async function prioritizeByEngagement(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   emails: Record<string, unknown>[],
   userId: string
 ): Promise<Record<string, unknown>[]> {

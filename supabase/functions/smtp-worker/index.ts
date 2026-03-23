@@ -1,3 +1,4 @@
+// deno-lint-ignore-file no-explicit-any
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import {
   checkWarmupVolumeCap,
@@ -260,7 +261,7 @@ async function sendViaSMTP(opts: {
 // ─── Rate Limit Checking ───────────────────────────────────────────────────────
 
 async function checkDomainRateLimit(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   userId: string,
   recipientDomain: string
 ): Promise<{ allowed: boolean; reason?: string }> {
@@ -285,14 +286,14 @@ async function checkDomainRateLimit(
       return { allowed: true }; // No rate limits configured
     }
 
-    return await enforceLimit(supabase, userId, recipientDomain, defaultLimit.max_per_minute, defaultLimit.max_per_hour);
+    return await enforceLimit(supabase, userId, recipientDomain, defaultLimit.max_per_minute as number, defaultLimit.max_per_hour as number);
   }
 
-  return await enforceLimit(supabase, userId, recipientDomain, limits.max_per_minute, limits.max_per_hour);
+  return await enforceLimit(supabase, userId, recipientDomain, limits.max_per_minute as number, limits.max_per_hour as number);
 }
 
 async function enforceLimit(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   userId: string,
   domain: string,
   maxPerMinute: number,
@@ -497,7 +498,7 @@ Deno.serve(async (req) => {
 });
 
 async function processEmail(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   email: Record<string, unknown>,
   smtpServers: Record<string, { hostname: string; ip_address: string; port: number; tls_enabled: boolean }>,
   results: { sent: number; failed: number; deferred: number; rateLimited: number; warmupDeferred: number },
@@ -606,10 +607,10 @@ async function processEmail(
 
       if (defaultServer) {
         server = {
-          hostname: defaultServer.hostname,
+          hostname: defaultServer.hostname as string,
           ip_address: String(defaultServer.ip_address),
-          port: defaultServer.port,
-          tls_enabled: defaultServer.tls_enabled,
+          port: defaultServer.port as number,
+          tls_enabled: defaultServer.tls_enabled as boolean,
         };
       }
     }
