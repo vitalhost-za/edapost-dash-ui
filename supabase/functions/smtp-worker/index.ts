@@ -606,10 +606,10 @@ async function processEmail(
 
       if (defaultServer) {
         server = {
-          hostname: defaultServer.hostname,
+          hostname: defaultServer.hostname as string,
           ip_address: String(defaultServer.ip_address),
-          port: defaultServer.port,
-          tls_enabled: defaultServer.tls_enabled,
+          port: defaultServer.port as number,
+          tls_enabled: defaultServer.tls_enabled as boolean,
         };
       }
     }
