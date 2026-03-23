@@ -249,7 +249,7 @@ export default function Analytics() {
         ) : (
           <>
             {/* KPI Cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-7 gap-4">
               {[
                 { label: "Sent", value: totals.sent.toLocaleString(), icon: Send, color: "text-info" },
                 { label: "Delivered", value: totals.delivered.toLocaleString(), icon: CheckCircle, color: "text-success" },
@@ -257,6 +257,7 @@ export default function Analytics() {
                 { label: "Bounce Rate", value: `${bounceRate}%`, icon: TrendingDown, color: "text-destructive" },
                 { label: "Open Rate", value: `${openRate}%`, icon: Eye, color: "text-primary" },
                 { label: "Click Rate", value: `${clickRate}%`, icon: MousePointerClick, color: "text-primary" },
+                { label: "Unsub Rate", value: `${unsubRate}%`, icon: UserX, color: "text-warning" },
               ].map((s) => (
                 <div key={s.label} className="bg-card border border-border rounded-lg p-4">
                   <div className="flex items-center justify-between">
