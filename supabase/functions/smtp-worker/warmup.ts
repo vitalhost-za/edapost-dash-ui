@@ -163,10 +163,10 @@ export async function advanceWarmupDays(
     .eq("status", "active");
 
   for (const warmup of activeWarmups || []) {
-    const startDate = new Date(warmup.started_at);
+    const startDate = new Date(warmup.started_at as string);
     const now = new Date();
     const daysSinceStart = Math.floor((now.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000)) + 1;
-    const newDay = Math.min(daysSinceStart, warmup.total_days);
+    const newDay = Math.min(daysSinceStart, warmup.total_days as number);
 
     const update: Record<string, unknown> = {
       warmup_day: newDay,
