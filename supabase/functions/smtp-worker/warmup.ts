@@ -187,7 +187,7 @@ export async function advanceWarmupDays(
 // Engaged = recipients who have opens/clicks in recent logs.
 
 export async function prioritizeByEngagement(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   emails: Record<string, unknown>[],
   userId: string
 ): Promise<Record<string, unknown>[]> {
