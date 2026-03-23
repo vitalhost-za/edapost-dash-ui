@@ -154,6 +154,31 @@ export default function Analytics() {
     }));
   }, [trendData]);
 
+  // Engagement rates over time (open, click, unsubscribe)
+  const engagementTrend = useMemo(() => {
+    if (!logStats?.length) return [];
+    const useHourly = timeRange === "24h";
+    const grouped: Record<string, { sent: number; opened: number; clicked: number; unsubscribed: number }> = {};
+
+    for (const log of logStats) {
+      const key = useHourly
+        ? format(startOfHour(new Date(log.created_at)), "HH:mm")
+        : format(startOfDay(new Date(log.created_at)), "MMM d");
+      if (!grouped[key]) grouped[key] = { sent: 0, opened: 0, clicked: 0, unsubscribed: 0 };
+      if (log.event_type === "sent" || log.event_type === "delivered") grouped[key].sent++;
+      if (log.event_type === "opened") grouped[key].opened++;
+      if (log.event_type === "clicked") grouped[key].clicked++;
+      if (log.event_type === "unsubscribed") grouped[key].unsubscribed++;
+    }
+
+    return Object.entries(grouped).map(([label, v]) => ({
+      label,
+      openRate: v.sent > 0 ? +((v.opened / v.sent) * 100).toFixed(1) : 0,
+      clickRate: v.sent > 0 ? +((v.clicked / v.sent) * 100).toFixed(1) : 0,
+      unsubRate: v.sent > 0 ? +((v.unsubscribed / v.sent) * 100).toFixed(1) : 0,
+    }));
+  }, [logStats, timeRange]);
+
   // Domain distribution from logs
   const domainDistribution = useMemo(() => {
     if (!logStats?.length) return [];
