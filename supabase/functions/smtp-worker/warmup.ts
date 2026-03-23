@@ -155,7 +155,7 @@ export async function incrementWarmupCounter(
 // Call this once per day (e.g., from a cron) to advance the warmup schedule
 
 export async function advanceWarmupDays(
-  supabase: ReturnType<typeof createClient>
+  supabase: any
 ): Promise<void> {
   const { data: activeWarmups } = await supabase
     .from("ip_warmup")
