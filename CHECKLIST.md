@@ -12,8 +12,8 @@
 
 <!-- Update these counters as items are checked off -->
 - **Total tasks:** 96
-- **Completed:** 56
-- **Remaining:** 40
+- **Completed:** 60
+- **Remaining:** 36
 
 ---
 
@@ -193,16 +193,16 @@
 
 ## Phase 10: EdaPost Application Integration
 
-- [ ] ⚛️ **App** — Build internal email sending SDK/library
+- [x] ⚛️ **App** — Build internal email sending SDK/library
 - [x] ⚛️ **App** — Implement `send_email()` interface (to, from, subject, html, text, headers, metadata)
 - [x] ⚛️ **App** — Implement webhook/status callback system
 - [x] ⚛️ **App** — Track statuses: queued, sent, delivered, bounced, complained
 - [x] ⚛️ **App** — Store email events in database for per-email tracking
 - [x] ⚛️ **App** — Implement email template rendering (HTML + plain text MIME)
-- [ ] ⚛️ **App** — Inline CSS in HTML templates
+- [x] ⚛️ **App** — Inline CSS in HTML templates
 - [x] ⚛️ **App** — Add `List-Unsubscribe` and `List-Unsubscribe-Post` headers to bulk emails
-- [ ] ⚛️ **App** — Process unsubscribe requests and update suppression list
-- [ ] ⚛️ **App** — Write integration tests for end-to-end email flow
+- [x] ⚛️ **App** — Process unsubscribe requests and update suppression list
+- [x] ⚛️ **App** — Write integration tests for end-to-end email flow
 
 ---
 
@@ -240,4 +240,4 @@
 
 ---
 
-*Last updated: 2026-03-21*
+*Last updated: 2026-03-27*
