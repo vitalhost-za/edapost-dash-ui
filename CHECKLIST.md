@@ -11,9 +11,9 @@
 ## Overall Progress
 
 <!-- Update these counters as items are checked off -->
-- **Total tasks:** 96
-- **Completed:** 93
-- **Remaining:** 3
+- **Total tasks:** 135
+- **Completed:** 89
+- **Remaining:** 46
 
 ---
 
