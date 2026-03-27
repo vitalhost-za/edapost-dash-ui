@@ -12,8 +12,8 @@
 
 <!-- Update these counters as items are checked off -->
 - **Total tasks:** 96
-- **Completed:** 86
-- **Remaining:** 10
+- **Completed:** 93
+- **Remaining:** 3
 
 ---
 
@@ -62,13 +62,13 @@
 
 ## Phase 4: TLS Encryption
 
-- [ ] 🖥️ **Server** — Install Certbot
-- [ ] 🖥️ **Server** — Obtain TLS certificate for `mail.edapost.net`
-- [ ] 🖥️ **Server** — Configure Postfix TLS settings in `main.cf`
-- [ ] 🖥️ **Server** — Disable insecure protocols (SSLv2, SSLv3, TLSv1, TLSv1.1)
-- [ ] 🖥️ **Server** — Set up automatic certificate renewal (cron/systemd timer)
-- [ ] 🖥️ **Server** — Add post-renewal hook to reload Postfix
-- [ ] 🖥️ **Server** — Verify TLS with `openssl s_client`
+- [x] 🖥️ **Server** — Install Certbot
+- [x] 🖥️ **Server** — Obtain TLS certificate for `mail.edapost.net` — *Let's Encrypt*
+- [x] 🖥️ **Server** — Configure Postfix TLS settings in `main.cf` — *TLSv1.3, TLS_AES_256_GCM_SHA384*
+- [x] 🖥️ **Server** — Disable insecure protocols (SSLv2, SSLv3, TLSv1, TLSv1.1)
+- [x] 🖥️ **Server** — Set up automatic certificate renewal (cron/systemd timer) — *Certbot auto-renewal*
+- [x] 🖥️ **Server** — Add post-renewal hook to reload Postfix
+- [x] 🖥️ **Server** — Verify TLS with `openssl s_client` — *Verify return code: 0 (ok)*
 
 ---
 
