@@ -11,37 +11,37 @@
 ## Overall Progress
 
 <!-- Update these counters as items are checked off -->
-- **Total tasks:** 96
-- **Completed:** 60
-- **Remaining:** 36
+- **Total tasks:** 135
+- **Completed:** 89
+- **Remaining:** 46
 
 ---
 
 ## Phase 1: Server Provisioning & Base Setup
 
-- [ ] 🖥️ **Server** — Select VPS provider (DigitalOcean / Vultr / Linode)
-- [ ] 🖥️ **Server** — Provision server (2 vCPU, 4 GB RAM, Ubuntu 22.04, static IP)
-- [ ] 🖥️ **Server** — Confirm outbound port 25 is not blocked by provider
-- [ ] 🖥️ **Server** — Create non-root sudo user
-- [ ] 🖥️ **Server** — Configure SSH key-only authentication
-- [ ] 🖥️ **Server** — Disable root SSH login and password authentication
-- [ ] 🖥️ **Server** — Set hostname to `mail.edapost.net`
-- [ ] 🖥️ **Server** — Set timezone to UTC
-- [ ] 🖥️ **Server** — Run full system update (`apt update && apt upgrade`)
-- [ ] 🖥️ **Server** — Install and enable UFW firewall
-- [ ] 🖥️ **Server** — Allow ports: 22, 25, 465, 587, 80, 443
-- [ ] 🖥️ **Server** — Deny all other inbound traffic
-- [ ] 🖥️ **Server** — Enable SSH rate limiting
+- [x] 🖥️ **Server** — Select VPS provider — *Hetzner*
+- [x] 🖥️ **Server** — Provision server — *CX23, 4 GB RAM, Ubuntu 24.04, Nuremberg*
+- [x] 🖥️ **Server** — Confirm outbound port 25 is not blocked by provider — *Hetzner unblocked*
+- [x] 🖥️ **Server** — Create non-root sudo user — *`edapost` created*
+- [x] 🖥️ **Server** — Configure SSH key-only authentication
+- [x] 🖥️ **Server** — Disable root SSH login and password authentication
+- [x] 🖥️ **Server** — Set hostname to `mail.edapost.net`
+- [x] 🖥️ **Server** — Set timezone to UTC
+- [x] 🖥️ **Server** — Run full system update (`apt update && apt upgrade`) — *28 packages upgraded*
+- [x] 🖥️ **Server** — Install and enable UFW firewall — *Active*
+- [x] 🖥️ **Server** — Allow ports: 22, 25, 465, 587, 80, 443
+- [x] 🖥️ **Server** — Deny all other inbound traffic — *Default deny incoming*
+- [x] 🖥️ **Server** — Enable SSH rate limiting — *Port 22 set to LIMIT*
 
 ---
 
 ## Phase 2: DNS Configuration
 
-- [ ] 🖥️ **Server** — Create A record: `mail.edapost.net` → server IP
-- [ ] 🖥️ **Server** — Create MX record: `edapost.net` → `mail.edapost.net` (priority 10)
-- [ ] 🖥️ **Server** — Set PTR (reverse DNS) via VPS provider: server IP → `mail.edapost.net`
-- [ ] 🖥️ **Server** — Add SPF TXT record: `v=spf1 ip4:<SERVER_IP> -all`
-- [ ] 🖥️ **Server** — Add DMARC TXT record on `_dmarc.edapost.net`
+- [x] 🖥️ **Server** — Create A record: `mail.edapost.net` → `46.225.10.27`
+- [x] 🖥️ **Server** — Create MX record: `edapost.net` → `mail.edapost.net` (priority 10)
+- [x] 🖥️ **Server** — Set PTR (reverse DNS) via VPS provider: `46.225.10.27` → `mail.edapost.net` — *IPv4 and IPv6*
+- [x] 🖥️ **Server** — Add SPF TXT record: `v=spf1 ip4:46.225.10.27 -all`
+- [x] 🖥️ **Server** — Add DMARC TXT record on `_dmarc.edapost.net` — *p=quarantine; rua=mailto:dmarc@edapost.net; pct=100*
 - [x] 🖥️ **Server** — Verify all DNS records with `dig` or online checker
 - [x] 🖥️ **Server** — Confirm PTR record resolves correctly
 
@@ -49,26 +49,26 @@
 
 ## Phase 3: Postfix SMTP Server
 
-- [ ] 🖥️ **Server** — Install Postfix and mailutils
-- [ ] 🖥️ **Server** — Configure `/etc/postfix/main.cf` (hostname, domain, origin, interfaces)
-- [ ] 🖥️ **Server** — Configure relay restrictions (prevent open relay)
-- [ ] 🖥️ **Server** — Set message size limit
-- [ ] 🖥️ **Server** — Enable submission port 587 in `/etc/postfix/master.cf`
-- [ ] 🖥️ **Server** — Restart and enable Postfix service
-- [ ] 🖥️ **Server** — Send test email via `mail` command
-- [ ] 🖥️ **Server** — Verify delivery in `/var/log/mail.log`
+- [x] 🖥️ **Server** — Install Postfix and mailutils
+- [x] 🖥️ **Server** — Configure `/etc/postfix/main.cf` (hostname, domain, origin, interfaces)
+- [x] 🖥️ **Server** — Configure relay restrictions (prevent open relay)
+- [x] 🖥️ **Server** — Set message size limit
+- [x] 🖥️ **Server** — Enable submission port 587 in `/etc/postfix/master.cf`
+- [x] 🖥️ **Server** — Restart and enable Postfix service
+- [x] 🖥️ **Server** — Send test email via `mail` command
+- [x] 🖥️ **Server** — Verify delivery in `/var/log/mail.log`
 
 ---
 
 ## Phase 4: TLS Encryption
 
-- [ ] 🖥️ **Server** — Install Certbot
-- [ ] 🖥️ **Server** — Obtain TLS certificate for `mail.edapost.net`
-- [ ] 🖥️ **Server** — Configure Postfix TLS settings in `main.cf`
-- [ ] 🖥️ **Server** — Disable insecure protocols (SSLv2, SSLv3, TLSv1, TLSv1.1)
-- [ ] 🖥️ **Server** — Set up automatic certificate renewal (cron/systemd timer)
-- [ ] 🖥️ **Server** — Add post-renewal hook to reload Postfix
-- [ ] 🖥️ **Server** — Verify TLS with `openssl s_client`
+- [x] 🖥️ **Server** — Install Certbot
+- [x] 🖥️ **Server** — Obtain TLS certificate for `mail.edapost.net` — *Let's Encrypt*
+- [x] 🖥️ **Server** — Configure Postfix TLS settings in `main.cf` — *TLSv1.3, TLS_AES_256_GCM_SHA384*
+- [x] 🖥️ **Server** — Disable insecure protocols (SSLv2, SSLv3, TLSv1, TLSv1.1)
+- [x] 🖥️ **Server** — Set up automatic certificate renewal (cron/systemd timer) — *Certbot auto-renewal*
+- [x] 🖥️ **Server** — Add post-renewal hook to reload Postfix
+- [x] 🖥️ **Server** — Verify TLS with `openssl s_client` — *Verify return code: 0 (ok)*
 
 ---
 
@@ -240,4 +240,4 @@
 
 ---
 
-*Last updated: 2026-03-27*
+*Last updated: 2026-03-28*
