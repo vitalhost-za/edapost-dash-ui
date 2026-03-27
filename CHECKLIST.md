@@ -12,26 +12,26 @@
 
 <!-- Update these counters as items are checked off -->
 - **Total tasks:** 96
-- **Completed:** 60
-- **Remaining:** 36
+- **Completed:** 73
+- **Remaining:** 23
 
 ---
 
 ## Phase 1: Server Provisioning & Base Setup
 
-- [ ] 🖥️ **Server** — Select VPS provider (DigitalOcean / Vultr / Linode)
-- [ ] 🖥️ **Server** — Provision server (2 vCPU, 4 GB RAM, Ubuntu 22.04, static IP)
-- [ ] 🖥️ **Server** — Confirm outbound port 25 is not blocked by provider
-- [ ] 🖥️ **Server** — Create non-root sudo user
-- [ ] 🖥️ **Server** — Configure SSH key-only authentication
-- [ ] 🖥️ **Server** — Disable root SSH login and password authentication
-- [ ] 🖥️ **Server** — Set hostname to `mail.edapost.net`
-- [ ] 🖥️ **Server** — Set timezone to UTC
-- [ ] 🖥️ **Server** — Run full system update (`apt update && apt upgrade`)
-- [ ] 🖥️ **Server** — Install and enable UFW firewall
-- [ ] 🖥️ **Server** — Allow ports: 22, 25, 465, 587, 80, 443
-- [ ] 🖥️ **Server** — Deny all other inbound traffic
-- [ ] 🖥️ **Server** — Enable SSH rate limiting
+- [x] 🖥️ **Server** — Select VPS provider — *Hetzner*
+- [x] 🖥️ **Server** — Provision server — *CX23, 4 GB RAM, Ubuntu 24.04, Nuremberg*
+- [x] 🖥️ **Server** — Confirm outbound port 25 is not blocked by provider — *Hetzner unblocked*
+- [x] 🖥️ **Server** — Create non-root sudo user — *`edapost` created*
+- [x] 🖥️ **Server** — Configure SSH key-only authentication
+- [x] 🖥️ **Server** — Disable root SSH login and password authentication
+- [x] 🖥️ **Server** — Set hostname to `mail.edapost.net`
+- [x] 🖥️ **Server** — Set timezone to UTC
+- [x] 🖥️ **Server** — Run full system update (`apt update && apt upgrade`) — *28 packages upgraded*
+- [x] 🖥️ **Server** — Install and enable UFW firewall — *Active*
+- [x] 🖥️ **Server** — Allow ports: 22, 25, 465, 587, 80, 443
+- [x] 🖥️ **Server** — Deny all other inbound traffic — *Default deny incoming*
+- [x] 🖥️ **Server** — Enable SSH rate limiting — *Port 22 set to LIMIT*
 
 ---
 
@@ -240,4 +240,4 @@
 
 ---
 
-*Last updated: 2026-03-27*
+*Last updated: 2026-03-28*
