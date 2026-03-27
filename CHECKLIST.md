@@ -12,8 +12,8 @@
 
 <!-- Update these counters as items are checked off -->
 - **Total tasks:** 96
-- **Completed:** 73
-- **Remaining:** 23
+- **Completed:** 78
+- **Remaining:** 18
 
 ---
 
@@ -37,11 +37,11 @@
 
 ## Phase 2: DNS Configuration
 
-- [ ] 🖥️ **Server** — Create A record: `mail.edapost.net` → server IP
-- [ ] 🖥️ **Server** — Create MX record: `edapost.net` → `mail.edapost.net` (priority 10)
-- [ ] 🖥️ **Server** — Set PTR (reverse DNS) via VPS provider: server IP → `mail.edapost.net`
-- [ ] 🖥️ **Server** — Add SPF TXT record: `v=spf1 ip4:<SERVER_IP> -all`
-- [ ] 🖥️ **Server** — Add DMARC TXT record on `_dmarc.edapost.net`
+- [x] 🖥️ **Server** — Create A record: `mail.edapost.net` → `46.225.10.27`
+- [x] 🖥️ **Server** — Create MX record: `edapost.net` → `mail.edapost.net` (priority 10)
+- [x] 🖥️ **Server** — Set PTR (reverse DNS) via VPS provider: `46.225.10.27` → `mail.edapost.net` — *IPv4 and IPv6*
+- [x] 🖥️ **Server** — Add SPF TXT record: `v=spf1 ip4:46.225.10.27 -all`
+- [x] 🖥️ **Server** — Add DMARC TXT record on `_dmarc.edapost.net` — *p=quarantine; rua=mailto:dmarc@edapost.net; pct=100*
 - [x] 🖥️ **Server** — Verify all DNS records with `dig` or online checker
 - [x] 🖥️ **Server** — Confirm PTR record resolves correctly
 
