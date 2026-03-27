@@ -12,8 +12,8 @@
 
 <!-- Update these counters as items are checked off -->
 - **Total tasks:** 135
-- **Completed:** 89
-- **Remaining:** 46
+- **Completed:** 98
+- **Remaining:** 37
 
 ---
 
@@ -74,15 +74,15 @@
 
 ## Phase 5: DKIM Signing
 
-- [ ] 🖥️ **Server** — Install OpenDKIM and opendkim-tools
-- [ ] 🖥️ **Server** — Generate DKIM key pair for `edapost.net`
-- [ ] 🖥️ **Server** — Configure `/etc/opendkim.conf` (domain, selector, key file, socket)
-- [ ] 🖥️ **Server** — Create signing table and key table files
-- [ ] 🖥️ **Server** — Integrate OpenDKIM with Postfix (milter settings in `main.cf`)
-- [ ] 🖥️ **Server** — Publish DKIM public key as DNS TXT record at `default._domainkey.edapost.net`
-- [ ] 🖥️ **Server** — Restart OpenDKIM and Postfix services
-- [ ] 🖥️ **Server** — Send test email and verify `DKIM-Signature` header
-- [ ] 🖥️ **Server** — Validate DKIM with an online checker
+- [x] 🖥️ **Server** — Install OpenDKIM and opendkim-tools
+- [x] 🖥️ **Server** — Generate DKIM key pair for `edapost.net` — *2048-bit*
+- [x] 🖥️ **Server** — Configure `/etc/opendkim.conf` (domain, selector, key file, socket)
+- [x] 🖥️ **Server** — Create signing table and key table files — *+ trusted hosts*
+- [x] 🖥️ **Server** — Integrate OpenDKIM with Postfix (milter settings in `main.cf`)
+- [x] 🖥️ **Server** — Publish DKIM public key as DNS TXT record at `default._domainkey.edapost.net` — *via Cloudflare*
+- [x] 🖥️ **Server** — Restart OpenDKIM and Postfix services
+- [x] 🖥️ **Server** — Send test email and verify `DKIM-Signature` header
+- [x] 🖥️ **Server** — Validate DKIM with an online checker
 
 ---
 
