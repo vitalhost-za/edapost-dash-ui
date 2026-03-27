@@ -12,8 +12,8 @@
 
 <!-- Update these counters as items are checked off -->
 - **Total tasks:** 96
-- **Completed:** 78
-- **Remaining:** 18
+- **Completed:** 86
+- **Remaining:** 10
 
 ---
 
@@ -49,14 +49,14 @@
 
 ## Phase 3: Postfix SMTP Server
 
-- [ ] 🖥️ **Server** — Install Postfix and mailutils
-- [ ] 🖥️ **Server** — Configure `/etc/postfix/main.cf` (hostname, domain, origin, interfaces)
-- [ ] 🖥️ **Server** — Configure relay restrictions (prevent open relay)
-- [ ] 🖥️ **Server** — Set message size limit
-- [ ] 🖥️ **Server** — Enable submission port 587 in `/etc/postfix/master.cf`
-- [ ] 🖥️ **Server** — Restart and enable Postfix service
-- [ ] 🖥️ **Server** — Send test email via `mail` command
-- [ ] 🖥️ **Server** — Verify delivery in `/var/log/mail.log`
+- [x] 🖥️ **Server** — Install Postfix and mailutils
+- [x] 🖥️ **Server** — Configure `/etc/postfix/main.cf` (hostname, domain, origin, interfaces)
+- [x] 🖥️ **Server** — Configure relay restrictions (prevent open relay)
+- [x] 🖥️ **Server** — Set message size limit
+- [x] 🖥️ **Server** — Enable submission port 587 in `/etc/postfix/master.cf`
+- [x] 🖥️ **Server** — Restart and enable Postfix service
+- [x] 🖥️ **Server** — Send test email via `mail` command
+- [x] 🖥️ **Server** — Verify delivery in `/var/log/mail.log`
 
 ---
 
