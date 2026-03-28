@@ -215,7 +215,7 @@ Deno.test({ name: "Rate limiting - wildcard (*) fallback limit applies", sanitiz
   } finally {
     await cleanupTestData(supabase, userId);
   }
-});
+}});
 
 Deno.test("Rate limiting - emails allowed when under limit", async () => {
   const { supabase, user, token } = await getAuthenticatedClient();
