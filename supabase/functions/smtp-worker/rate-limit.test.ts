@@ -297,7 +297,7 @@ Deno.test({ name: "Rate limiting - inactive rule does not block sends", sanitize
   } finally {
     await cleanupTestData(supabase, userId);
   }
-});
+}});
 
 Deno.test("Rate limiting - burst of emails under load", async () => {
   const { supabase, user, token } = await getAuthenticatedClient();
