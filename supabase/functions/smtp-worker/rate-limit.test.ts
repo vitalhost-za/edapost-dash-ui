@@ -138,7 +138,7 @@ Deno.test({ name: "Rate limiting - per-minute limit defers excess emails", sanit
   }
 }});
 
-Deno.test("Rate limiting - per-hour limit defers excess emails", async () => {
+Deno.test({ name: "Rate limiting - per-hour limit defers excess emails", sanitizeResources: false, sanitizeOps: false, fn: async () => {
   const { supabase, user, token } = await getAuthenticatedClient();
   const userId = user.id;
 
