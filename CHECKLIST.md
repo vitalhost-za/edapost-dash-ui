@@ -12,8 +12,8 @@
 
 <!-- Update these counters as items are checked off -->
 - **Total tasks:** 135
-- **Completed:** 89
-- **Remaining:** 46
+- **Completed:** 109
+- **Remaining:** 26
 
 ---
 
@@ -74,25 +74,25 @@
 
 ## Phase 5: DKIM Signing
 
-- [ ] 🖥️ **Server** — Install OpenDKIM and opendkim-tools
-- [ ] 🖥️ **Server** — Generate DKIM key pair for `edapost.net`
-- [ ] 🖥️ **Server** — Configure `/etc/opendkim.conf` (domain, selector, key file, socket)
-- [ ] 🖥️ **Server** — Create signing table and key table files
-- [ ] 🖥️ **Server** — Integrate OpenDKIM with Postfix (milter settings in `main.cf`)
-- [ ] 🖥️ **Server** — Publish DKIM public key as DNS TXT record at `default._domainkey.edapost.net`
-- [ ] 🖥️ **Server** — Restart OpenDKIM and Postfix services
-- [ ] 🖥️ **Server** — Send test email and verify `DKIM-Signature` header
-- [ ] 🖥️ **Server** — Validate DKIM with an online checker
+- [x] 🖥️ **Server** — Install OpenDKIM and opendkim-tools
+- [x] 🖥️ **Server** — Generate DKIM key pair for `edapost.net` — *2048-bit*
+- [x] 🖥️ **Server** — Configure `/etc/opendkim.conf` (domain, selector, key file, socket)
+- [x] 🖥️ **Server** — Create signing table and key table files — *+ trusted hosts*
+- [x] 🖥️ **Server** — Integrate OpenDKIM with Postfix (milter settings in `main.cf`)
+- [x] 🖥️ **Server** — Publish DKIM public key as DNS TXT record at `default._domainkey.edapost.net` — *via Cloudflare*
+- [x] 🖥️ **Server** — Restart OpenDKIM and Postfix services
+- [x] 🖥️ **Server** — Send test email and verify `DKIM-Signature` header
+- [x] 🖥️ **Server** — Validate DKIM with an online checker
 
 ---
 
 ## Phase 6: Email Queue System
 
 ### 6a. Redis Installation
-- [ ] 🖥️ **Server** — Install Redis server
-- [ ] 🖥️ **Server** — Bind Redis to `127.0.0.1` only
-- [ ] 🖥️ **Server** — Enable Redis persistence (AOF or RDB)
-- [ ] 🖥️ **Server** — Test Redis connectivity
+- [x] 🖥️ **Server** — Install Redis server
+- [x] 🖥️ **Server** — Bind Redis to `127.0.0.1` only
+- [x] 🖥️ **Server** — Enable Redis persistence (AOF or RDB)
+- [x] 🖥️ **Server** — Test Redis connectivity — *PONG*
 
 ### 6b. Email API
 - [x] ⚛️ **App** — Design email job payload schema (to, from, subject, body, headers, metadata)
@@ -120,8 +120,8 @@
 ## Phase 7: Bounce & Complaint Handling
 
 ### 7a. Bounce Processing
-- [ ] 🖥️ **Server** — Install Rspamd and integrate with Postfix
-- [ ] 🖥️ **Server** — Configure dedicated bounce address (`bounces@edapost.net`)
+- [x] 🖥️ **Server** — Install Rspamd and integrate with Postfix
+- [x] 🖥️ **Server** — Configure dedicated bounce address (`bounces@edapost.net`)
 - [x] ⚛️ **App** — Build DSN (Delivery Status Notification) parser
 - [x] ⚛️ **App** — Classify bounces: hard vs. soft
 - [x] ⚛️ **App** — Hard bounce → mark address invalid, suppress future sends
@@ -129,9 +129,9 @@
 - [x] ⚛️ **App** — Write tests for bounce classification logic
 
 ### 7b. Complaint (FBL) Processing
-- [ ] 🖥️ **Server** — Register with Gmail Postmaster Tools
-- [ ] 🖥️ **Server** — Register with Microsoft SNDS
-- [ ] 🖥️ **Server** — Register with Yahoo Complaint Feedback Loop
+- [x] 🖥️ **Server** — Register with Gmail Postmaster Tools
+- [x] 🖥️ **Server** — Register with Microsoft SNDS
+- [x] 🖥️ **Server** — Register with Yahoo Complaint Feedback Loop — *abuse address + aliases configured*
 - [x] ⚛️ **App** — Build ARF (Abuse Reporting Format) report parser
 - [x] ⚛️ **App** — Auto-unsubscribe complaining addresses
 - [x] ⚛️ **App** — Log complaints for analytics
@@ -150,11 +150,11 @@
 - [x] ⚛️ **App** — Implement volume caps in queue worker
 - [x] ⚛️ **App** — Prioritize engaged/active recipients during warmup
 - [x] ⚛️ **App** — Spread sends evenly throughout the day (no bursts)
-- [ ] 🖥️ **Server** — Monitor Gmail Postmaster Tools daily during warmup
-- [ ] 🖥️ **Server** — Monitor Microsoft SNDS daily during warmup
-- [ ] 🖥️ **Server** — Confirm bounce rate stays below 2%
-- [ ] 🖥️ **Server** — Confirm complaint rate stays below 0.1%
-- [ ] 🖥️ **Server** — Complete 30-day warmup period
+- [x] 🖥️ **Server** — Monitor Gmail Postmaster Tools daily during warmup — *registered, monitoring in progress*
+- [x] 🖥️ **Server** — Monitor Microsoft SNDS daily during warmup — *registered, monitoring in progress*
+- [ ] 🖥️ **Server** — Confirm bounce rate stays below 2% — *ongoing: 30-day warmup*
+- [ ] 🖥️ **Server** — Confirm complaint rate stays below 0.1% — *ongoing: 30-day warmup*
+- [ ] 🖥️ **Server** — Complete 30-day warmup period — *in progress, starting at 50 emails/day*
 
 ---
 
