@@ -12,8 +12,8 @@
 
 <!-- Update these counters as items are checked off -->
 - **Total tasks:** 135
-- **Completed:** 102
-- **Remaining:** 33
+- **Completed:** 104
+- **Remaining:** 31
 
 ---
 
@@ -120,8 +120,8 @@
 ## Phase 7: Bounce & Complaint Handling
 
 ### 7a. Bounce Processing
-- [ ] 🖥️ **Server** — Install Rspamd and integrate with Postfix
-- [ ] 🖥️ **Server** — Configure dedicated bounce address (`bounces@edapost.net`)
+- [x] 🖥️ **Server** — Install Rspamd and integrate with Postfix
+- [x] 🖥️ **Server** — Configure dedicated bounce address (`bounces@edapost.net`)
 - [x] ⚛️ **App** — Build DSN (Delivery Status Notification) parser
 - [x] ⚛️ **App** — Classify bounces: hard vs. soft
 - [x] ⚛️ **App** — Hard bounce → mark address invalid, suppress future sends
