@@ -19,24 +19,34 @@ const SUPABASE_URL = Deno.env.get("VITE_SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("VITE_SUPABASE_PUBLISHABLE_KEY")!;
 const WORKER_URL = `${SUPABASE_URL}/functions/v1/smtp-worker`;
 
-// ── Helpers ────────────────────────────────────────────────────────────────────
+// ── Shared auth session (initialized once) ─────────────────────────────────────
+
+let _cachedAuth: { supabase: any; user: any; token: string } | null = null;
 
 async function getAuthenticatedClient() {
-  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  if (_cachedAuth) return _cachedAuth;
 
-  // Use a test user – create or sign in
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   const email = "rate-limit-test@edapost.test";
   const password = "TestPassword123!";
+
+  // Try sign in first, then sign up if needed
+  const { data: signIn, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+  if (!signInError && signIn.user) {
+    _cachedAuth = { supabase, user: signIn.user, token: signIn.session!.access_token };
+    return _cachedAuth;
+  }
 
   const { error: signUpError } = await supabase.auth.signUp({ email, password });
   if (signUpError && !signUpError.message.includes("already registered")) {
     throw signUpError;
   }
 
-  const { data: signIn, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-  if (signInError) throw signInError;
+  const { data: signIn2, error: signInError2 } = await supabase.auth.signInWithPassword({ email, password });
+  if (signInError2) throw signInError2;
 
-  return { supabase, user: signIn.user!, token: signIn.session!.access_token };
+  _cachedAuth = { supabase, user: signIn2.user!, token: signIn2.session!.access_token };
+  return _cachedAuth;
 }
 
 async function cleanupTestData(supabase: any, userId: string) {
