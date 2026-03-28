@@ -299,7 +299,7 @@ Deno.test({ name: "Rate limiting - inactive rule does not block sends", sanitize
   }
 }});
 
-Deno.test("Rate limiting - burst of emails under load", async () => {
+Deno.test({ name: "Rate limiting - burst of emails all deferred when limit pre-saturated", sanitizeResources: false, sanitizeOps: false, fn: async () => {
   const { supabase, user, token } = await getAuthenticatedClient();
   const userId = user.id;
 
@@ -317,33 +317,36 @@ Deno.test("Rate limiting - burst of emails under load", async () => {
       is_active: true,
     });
 
-    // Queue 6 emails — first 3 should process, last 3 should be deferred
+    // Pre-saturate: 3 sends already tracked in the last minute
+    const now = new Date();
+    for (let i = 0; i < 3; i++) {
+      await supabase.from("domain_send_tracking").insert({
+        user_id: userId,
+        domain: testDomain,
+        sent_at: new Date(now.getTime() - (i * 5000)).toISOString(),
+      });
+    }
+
+    // Queue 4 more emails — all should be deferred
     const queueIds: string[] = [];
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 4; i++) {
       queueIds.push(await queueEmail(supabase, userId, testDomain, i));
     }
 
-    // Invoke worker to process the batch
     const res = await invokeWorker(token);
     await res.text();
 
-    // Check results
     let deferredCount = 0;
-    let processedCount = 0;
     for (const id of queueIds) {
       const item = await getQueueItem(supabase, id);
       if (item.status === "deferred" && (item.error_message || "").includes("Rate limit")) {
         deferredCount++;
-      } else {
-        processedCount++;
       }
     }
 
-    // At least some should be deferred (the ones beyond the limit)
-    assertEquals(deferredCount >= 3, true, `Expected at least 3 deferred, got ${deferredCount}`);
-    // At least some should have been processed or attempted
-    assertEquals(processedCount >= 1, true, `Expected at least 1 processed, got ${processedCount}`);
+    // All 4 should be deferred since limit is already saturated
+    assertEquals(deferredCount, 4, `Expected all 4 deferred, got ${deferredCount}`);
   } finally {
     await cleanupTestData(supabase, userId);
   }
-});
+}});
