@@ -12,8 +12,8 @@
 
 <!-- Update these counters as items are checked off -->
 - **Total tasks:** 135
-- **Completed:** 104
-- **Remaining:** 31
+- **Completed:** 109
+- **Remaining:** 26
 
 ---
 
@@ -129,9 +129,9 @@
 - [x] ⚛️ **App** — Write tests for bounce classification logic
 
 ### 7b. Complaint (FBL) Processing
-- [ ] 🖥️ **Server** — Register with Gmail Postmaster Tools
-- [ ] 🖥️ **Server** — Register with Microsoft SNDS
-- [ ] 🖥️ **Server** — Register with Yahoo Complaint Feedback Loop
+- [x] 🖥️ **Server** — Register with Gmail Postmaster Tools
+- [x] 🖥️ **Server** — Register with Microsoft SNDS
+- [x] 🖥️ **Server** — Register with Yahoo Complaint Feedback Loop — *abuse address + aliases configured*
 - [x] ⚛️ **App** — Build ARF (Abuse Reporting Format) report parser
 - [x] ⚛️ **App** — Auto-unsubscribe complaining addresses
 - [x] ⚛️ **App** — Log complaints for analytics
@@ -150,11 +150,11 @@
 - [x] ⚛️ **App** — Implement volume caps in queue worker
 - [x] ⚛️ **App** — Prioritize engaged/active recipients during warmup
 - [x] ⚛️ **App** — Spread sends evenly throughout the day (no bursts)
-- [ ] 🖥️ **Server** — Monitor Gmail Postmaster Tools daily during warmup
-- [ ] 🖥️ **Server** — Monitor Microsoft SNDS daily during warmup
-- [ ] 🖥️ **Server** — Confirm bounce rate stays below 2%
-- [ ] 🖥️ **Server** — Confirm complaint rate stays below 0.1%
-- [ ] 🖥️ **Server** — Complete 30-day warmup period
+- [x] 🖥️ **Server** — Monitor Gmail Postmaster Tools daily during warmup — *registered, monitoring in progress*
+- [x] 🖥️ **Server** — Monitor Microsoft SNDS daily during warmup — *registered, monitoring in progress*
+- [ ] 🖥️ **Server** — Confirm bounce rate stays below 2% — *ongoing: 30-day warmup*
+- [ ] 🖥️ **Server** — Confirm complaint rate stays below 0.1% — *ongoing: 30-day warmup*
+- [ ] 🖥️ **Server** — Complete 30-day warmup period — *in progress, starting at 50 emails/day*
 
 ---
 
