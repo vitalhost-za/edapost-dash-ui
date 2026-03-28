@@ -12,8 +12,8 @@
 
 <!-- Update these counters as items are checked off -->
 - **Total tasks:** 135
-- **Completed:** 98
-- **Remaining:** 37
+- **Completed:** 102
+- **Remaining:** 33
 
 ---
 
@@ -89,10 +89,10 @@
 ## Phase 6: Email Queue System
 
 ### 6a. Redis Installation
-- [ ] 🖥️ **Server** — Install Redis server
-- [ ] 🖥️ **Server** — Bind Redis to `127.0.0.1` only
-- [ ] 🖥️ **Server** — Enable Redis persistence (AOF or RDB)
-- [ ] 🖥️ **Server** — Test Redis connectivity
+- [x] 🖥️ **Server** — Install Redis server
+- [x] 🖥️ **Server** — Bind Redis to `127.0.0.1` only
+- [x] 🖥️ **Server** — Enable Redis persistence (AOF or RDB)
+- [x] 🖥️ **Server** — Test Redis connectivity — *PONG*
 
 ### 6b. Email API
 - [x] ⚛️ **App** — Design email job payload schema (to, from, subject, body, headers, metadata)
