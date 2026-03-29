@@ -12,8 +12,8 @@
 
 <!-- Update these counters as items are checked off -->
 - **Total tasks:** 135
-- **Completed:** 109
-- **Remaining:** 26
+- **Completed:** 115
+- **Remaining:** 20
 
 ---
 
@@ -63,12 +63,12 @@
 ## Phase 4: TLS Encryption
 
 - [x] 🖥️ **Server** — Install Certbot
-- [x] 🖥️ **Server** — Obtain TLS certificate for `mail.edapost.net` — *Let's Encrypt*
-- [x] 🖥️ **Server** — Configure Postfix TLS settings in `main.cf` — *TLSv1.3, TLS_AES_256_GCM_SHA384*
+- [x] 🖥️ **Server** — Obtain TLS certificate for `mail.edapost.net`
+- [x] 🖥️ **Server** — Configure Postfix TLS settings in `main.cf`
 - [x] 🖥️ **Server** — Disable insecure protocols (SSLv2, SSLv3, TLSv1, TLSv1.1)
-- [x] 🖥️ **Server** — Set up automatic certificate renewal (cron/systemd timer) — *Certbot auto-renewal*
+- [x] 🖥️ **Server** — Set up automatic certificate renewal (cron/systemd timer)
 - [x] 🖥️ **Server** — Add post-renewal hook to reload Postfix
-- [x] 🖥️ **Server** — Verify TLS with `openssl s_client` — *Verify return code: 0 (ok)*
+- [x] 🖥️ **Server** — Verify TLS with `openssl s_client`
 
 ---
 
@@ -113,7 +113,7 @@
 ### 6d. Rate Limiting
 - [x] ⚛️ **App** — Implement per-domain sending rate limits
 - [x] ⚛️ **App** — Make rate limits configurable
-- [ ] ⚛️ **App** — Test rate limiting under load
+- [x] ⚛️ **App** — Test rate limiting under load
 
 ---
 
@@ -209,15 +209,15 @@
 ## Phase 11: Backup & Failover
 
 - [ ] 🖥️ **Server** — Set up secondary sending via Mailgun or SendGrid API
-- [ ] ⚛️ **App** — Implement automatic failover logic in queue worker
-- [ ] ⚛️ **App** — Define failover triggers (Postfix down, high bounce rate, IP blacklisted)
-- [ ] ⚛️ **App** — Implement health-check loop for primary SMTP path
-- [ ] ⚛️ **App** — Alert team on failover event
+- [x] ⚛️ **App** — Implement automatic failover logic in queue worker
+- [x] ⚛️ **App** — Define failover triggers (Postfix down, high bounce rate, IP blacklisted)
+- [x] ⚛️ **App** — Implement health-check loop for primary SMTP path
+- [x] ⚛️ **App** — Alert team on failover event
 - [ ] 🖥️ **Server** — Schedule regular Redis data backups
 - [ ] 🖥️ **Server** — Back up Postfix configuration files
 - [ ] 🖥️ **Server** — Back up DKIM keys (encrypted, off-server)
 - [ ] 🖥️ **Server** — Back up suppression list database
-- [ ] ⚛️ **App** — Test failover procedure end-to-end
+- [x] ⚛️ **App** — Test failover procedure end-to-end
 
 ---
 
@@ -240,4 +240,4 @@
 
 ---
 
-*Last updated: 2026-03-28*
+*Last updated: 2026-03-29*

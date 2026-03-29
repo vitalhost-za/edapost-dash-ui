@@ -725,6 +725,51 @@ export type Database = {
         }
         Relationships: []
       }
+      failover_events: {
+        Row: {
+          created_at: string
+          from_server_id: string | null
+          id: string
+          to_server_id: string | null
+          trigger_details: Json | null
+          trigger_reason: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          from_server_id?: string | null
+          id?: string
+          to_server_id?: string | null
+          trigger_details?: Json | null
+          trigger_reason: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          from_server_id?: string | null
+          id?: string
+          to_server_id?: string | null
+          trigger_details?: Json | null
+          trigger_reason?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "failover_events_from_server_id_fkey"
+            columns: ["from_server_id"]
+            isOneToOne: false
+            referencedRelation: "smtp_servers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "failover_events_to_server_id_fkey"
+            columns: ["to_server_id"]
+            isOneToOne: false
+            referencedRelation: "smtp_servers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ip_warmup: {
         Row: {
           created_at: string
@@ -863,11 +908,16 @@ export type Database = {
       }
       smtp_servers: {
         Row: {
+          consecutive_failures: number
           created_at: string
           current_connections: number
+          failover_group: string | null
+          health_check_status: string
           hostname: string
           id: string
           ip_address: unknown
+          is_primary: boolean
+          last_health_check: string | null
           last_heartbeat: string | null
           max_connections: number
           port: number
@@ -880,11 +930,16 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          consecutive_failures?: number
           created_at?: string
           current_connections?: number
+          failover_group?: string | null
+          health_check_status?: string
           hostname: string
           id?: string
           ip_address: unknown
+          is_primary?: boolean
+          last_health_check?: string | null
           last_heartbeat?: string | null
           max_connections?: number
           port?: number
@@ -897,11 +952,16 @@ export type Database = {
           user_id: string
         }
         Update: {
+          consecutive_failures?: number
           created_at?: string
           current_connections?: number
+          failover_group?: string | null
+          health_check_status?: string
           hostname?: string
           id?: string
           ip_address?: unknown
+          is_primary?: boolean
+          last_health_check?: string | null
           last_heartbeat?: string | null
           max_connections?: number
           port?: number

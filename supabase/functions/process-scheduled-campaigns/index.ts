@@ -216,16 +216,17 @@ Deno.serve(async (req) => {
       JSON.stringify({ processed: results.length, results }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
-  } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), {
+  } catch (err: unknown) {
+    return new Response(JSON.stringify({ error: err instanceof Error ? err.message : "Unknown error" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });
 
+// deno-lint-ignore no-explicit-any
 async function selectAbTestWinners(
-  supabase: ReturnType<typeof createClient>
+  supabase: any
 ): Promise<{ id: string; action: string }[]> {
   const results: { id: string; action: string }[] = [];
 
@@ -282,8 +283,9 @@ async function selectAbTestWinners(
   return results;
 }
 
+// deno-lint-ignore no-explicit-any
 async function checkRecurrenceEligible(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   campaign: Record<string, unknown>
 ): Promise<boolean> {
   if (typeof campaign.recurrence_count === "number" && campaign.recurrence_count <= 0) return false;
