@@ -90,8 +90,7 @@ Deno.test({
     await client.from("user_settings").insert({ user_id: TEST_USER_ID });
 
     // Primary at threshold-1 consecutive failures → one more triggers failover
-    // Use 127.0.0.1 port 1 — fails fast (connection refused instead of timeout)
-    const { data: primary } = await client.from("smtp_servers").insert({
+    const { data: primary, error: primaryErr } = await client.from("smtp_servers").insert({
       user_id: TEST_USER_ID,
       hostname: "primary-fail.local",
       ip_address: "127.0.0.1",
@@ -101,6 +100,7 @@ Deno.test({
       failover_group: "fo-test",
       consecutive_failures: 2,
     }).select().single();
+    console.log("PRIMARY INSERT:", primary, primaryErr);
 
     // Healthy secondary
     const { data: secondary } = await client.from("smtp_servers").insert({
