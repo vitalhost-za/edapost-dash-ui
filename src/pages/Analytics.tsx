@@ -157,6 +157,31 @@ export default function Analytics() {
     },
   });
 
+  // Rate limiting data: deferred emails from queue (rate-limited) and send tracking
+  const { data: rateLimitedEmails } = useQuery({
+    queryKey: ["analytics-rate-limited", timeRange],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("email_queue")
+        .select("status, error_message, updated_at, to_address")
+        .gte("updated_at", periods.current.toISOString())
+        .order("updated_at", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const { data: domainRateLimits } = useQuery({
+    queryKey: ["analytics-domain-rate-limits"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("domain_rate_limits")
+        .select("domain, max_per_minute, max_per_hour, is_active");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
   // ---- Computed: current period totals ----
   const totals = useMemo(() => {
     if (!deliveryStats?.length) return { sent: 0, delivered: 0, bounced: 0, failed: 0, complaints: 0 };
