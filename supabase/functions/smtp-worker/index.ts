@@ -593,25 +593,47 @@ async function processEmail(
       return;
     }
 
-    // Get SMTP server config
+    // Get SMTP server config (with failover support)
     let server = smtpServerId ? smtpServers[smtpServerId] : null;
+    let activeServerId = smtpServerId;
     if (!server) {
-      // Try to find the user's first available server
-      const { data: defaultServer } = await supabase
+      // Try to find the user's primary online server first
+      const { data: primaryServer } = await supabase
         .from("smtp_servers")
         .select("id, hostname, ip_address, port, tls_enabled")
         .eq("user_id", userId)
         .eq("status", "online")
+        .eq("is_primary", true)
         .limit(1)
         .maybeSingle();
 
-      if (defaultServer) {
+      if (primaryServer) {
         server = {
-          hostname: defaultServer.hostname as string,
-          ip_address: String(defaultServer.ip_address),
-          port: defaultServer.port as number,
-          tls_enabled: defaultServer.tls_enabled as boolean,
+          hostname: primaryServer.hostname as string,
+          ip_address: String(primaryServer.ip_address),
+          port: primaryServer.port as number,
+          tls_enabled: primaryServer.tls_enabled as boolean,
         };
+        activeServerId = primaryServer.id;
+      } else {
+        // Fallback: any online server
+        const { data: fallbackServer } = await supabase
+          .from("smtp_servers")
+          .select("id, hostname, ip_address, port, tls_enabled")
+          .eq("user_id", userId)
+          .eq("status", "online")
+          .limit(1)
+          .maybeSingle();
+
+        if (fallbackServer) {
+          server = {
+            hostname: fallbackServer.hostname as string,
+            ip_address: String(fallbackServer.ip_address),
+            port: fallbackServer.port as number,
+            tls_enabled: fallbackServer.tls_enabled as boolean,
+          };
+          activeServerId = fallbackServer.id;
+        }
       }
     }
 
