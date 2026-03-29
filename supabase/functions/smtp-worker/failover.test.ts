@@ -49,8 +49,8 @@ Deno.test({
     const { data: server } = await client.from("smtp_servers").insert({
       user_id: TEST_USER_ID,
       hostname: "failover-test.local",
-      ip_address: "192.0.2.1",
-      port: 25,
+      ip_address: "127.0.0.1",
+      port: 1,
       status: "online",
       is_primary: true,
     }).select().single();
