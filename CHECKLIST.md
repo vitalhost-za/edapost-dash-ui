@@ -12,8 +12,8 @@
 
 <!-- Update these counters as items are checked off -->
 - **Total tasks:** 135
-- **Completed:** 115
-- **Remaining:** 20
+- **Completed:** 119
+- **Remaining:** 16
 
 ---
 
@@ -161,10 +161,10 @@
 ## Phase 9: Monitoring & Observability
 
 ### 9a. Infrastructure
-- [ ] 🖥️ **Server** — Install Prometheus
-- [ ] 🖥️ **Server** — Install Grafana
-- [ ] 🖥️ **Server** — Install Node Exporter (CPU, RAM, disk metrics)
-- [ ] 🖥️ **Server** — Configure Prometheus to scrape all exporters
+- [x] 🖥️ **Server** — Install Prometheus
+- [x] 🖥️ **Server** — Install Grafana
+- [x] 🖥️ **Server** — Install Node Exporter (CPU, RAM, disk metrics)
+- [x] 🖥️ **Server** — Configure Prometheus to scrape all exporters
 
 ### 9b. Email Metrics
 - [x] ⚛️ **App** — Track emails sent per minute (from queue worker)
