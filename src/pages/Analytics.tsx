@@ -334,7 +334,34 @@ export default function Analytics() {
     return Object.entries(counts).sort(([, a], [, b]) => b - a).map(([name, value]) => ({ name, value }));
   }, [logStats]);
 
-  const isLoading = statsLoading || logsLoading;
+  // Rate limiting chart data
+  const rateLimitTrend = useMemo(() => {
+    if (!rateLimitedEmails?.length) return [];
+    const useHourly = timeRange === "24h";
+    const grouped: Record<string, { allowed: number; throttled: number }> = {};
+    for (const email of rateLimitedEmails) {
+      const key = useHourly
+        ? format(startOfHour(new Date(email.updated_at)), "HH:mm")
+        : format(startOfDay(new Date(email.updated_at)), "MMM d");
+      if (!grouped[key]) grouped[key] = { allowed: 0, throttled: 0 };
+      const isThrottled = email.status === "deferred" && email.error_message?.toLowerCase().includes("rate limit");
+      if (isThrottled) {
+        grouped[key].throttled++;
+      } else {
+        grouped[key].allowed++;
+      }
+    }
+    return Object.entries(grouped).map(([label, v]) => ({ label, ...v, total: v.allowed + v.throttled }));
+  }, [rateLimitedEmails, timeRange]);
+
+  const rateLimitSummary = useMemo(() => {
+    if (!rateLimitedEmails?.length) return { total: 0, throttled: 0, allowed: 0, throttleRate: 0 };
+    const throttled = rateLimitedEmails.filter(e => e.status === "deferred" && e.error_message?.toLowerCase().includes("rate limit")).length;
+    const total = rateLimitedEmails.length;
+    return { total, throttled, allowed: total - throttled, throttleRate: total > 0 ? +((throttled / total) * 100).toFixed(1) : 0 };
+  }, [rateLimitedEmails]);
+
+
 
   return (
     <DashboardLayout>
