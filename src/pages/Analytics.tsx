@@ -583,6 +583,60 @@ export default function Analytics() {
                 </div>
               </div>
             </div>
+
+            {/* Rate Limiting Visualization */}
+            <div className="bg-card border border-border rounded-lg p-5">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-sm font-medium text-foreground">Rate Limiting — Throttled vs Allowed</h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">Emails deferred due to domain rate limits vs successfully queued</p>
+                </div>
+                <div className="flex items-center gap-4 text-xs">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-sm bg-success" />
+                    <span className="text-muted-foreground">Allowed ({rateLimitSummary.allowed.toLocaleString()})</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-sm bg-destructive" />
+                    <span className="text-muted-foreground">Throttled ({rateLimitSummary.throttled.toLocaleString()})</span>
+                  </div>
+                  {rateLimitSummary.total > 0 && (
+                    <span className={cn(
+                      "px-2 py-0.5 rounded font-medium",
+                      rateLimitSummary.throttleRate > 10 ? "text-destructive bg-destructive/15" : rateLimitSummary.throttleRate > 2 ? "text-warning bg-warning/15" : "text-success bg-success/15"
+                    )}>
+                      {rateLimitSummary.throttleRate}% throttled
+                    </span>
+                  )}
+                </div>
+              </div>
+              {rateLimitTrend.length > 0 ? (
+                <ResponsiveContainer width="100%" height={260}>
+                  <BarChart data={rateLimitTrend}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                    <XAxis dataKey="label" tick={{ fontSize: 10, className: "fill-muted-foreground" }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize: 10, className: "fill-muted-foreground" }} axisLine={false} tickLine={false} />
+                    <Tooltip contentStyle={tooltipStyle} />
+                    <Bar dataKey="allowed" name="Allowed" stackId="rl" fill="hsl(142, 71%, 45%)" radius={[0, 0, 0, 0]} />
+                    <Bar dataKey="throttled" name="Throttled" stackId="rl" fill="hsl(0, 72%, 51%)" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-[260px] text-sm text-muted-foreground">No rate limiting data for this period</div>
+              )}
+              {domainRateLimits && domainRateLimits.length > 0 && (
+                <div className="mt-4 border-t border-border pt-3">
+                  <p className="text-xs font-medium text-muted-foreground mb-2">Active Rate Limit Rules</p>
+                  <div className="flex flex-wrap gap-2">
+                    {domainRateLimits.filter(r => r.is_active).map((r) => (
+                      <span key={r.domain} className="text-xs bg-secondary text-secondary-foreground px-2 py-1 rounded-md">
+                        {r.domain}: {r.max_per_minute}/min · {r.max_per_hour}/hr
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </>
         )}
       </div>
