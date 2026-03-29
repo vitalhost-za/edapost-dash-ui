@@ -593,25 +593,47 @@ async function processEmail(
       return;
     }
 
-    // Get SMTP server config
+    // Get SMTP server config (with failover support)
     let server = smtpServerId ? smtpServers[smtpServerId] : null;
+    let activeServerId = smtpServerId;
     if (!server) {
-      // Try to find the user's first available server
-      const { data: defaultServer } = await supabase
+      // Try to find the user's primary online server first
+      const { data: primaryServer } = await supabase
         .from("smtp_servers")
         .select("id, hostname, ip_address, port, tls_enabled")
         .eq("user_id", userId)
         .eq("status", "online")
+        .eq("is_primary", true)
         .limit(1)
         .maybeSingle();
 
-      if (defaultServer) {
+      if (primaryServer) {
         server = {
-          hostname: defaultServer.hostname as string,
-          ip_address: String(defaultServer.ip_address),
-          port: defaultServer.port as number,
-          tls_enabled: defaultServer.tls_enabled as boolean,
+          hostname: primaryServer.hostname as string,
+          ip_address: String(primaryServer.ip_address),
+          port: primaryServer.port as number,
+          tls_enabled: primaryServer.tls_enabled as boolean,
         };
+        activeServerId = primaryServer.id;
+      } else {
+        // Fallback: any online server
+        const { data: fallbackServer } = await supabase
+          .from("smtp_servers")
+          .select("id, hostname, ip_address, port, tls_enabled")
+          .eq("user_id", userId)
+          .eq("status", "online")
+          .limit(1)
+          .maybeSingle();
+
+        if (fallbackServer) {
+          server = {
+            hostname: fallbackServer.hostname as string,
+            ip_address: String(fallbackServer.ip_address),
+            port: fallbackServer.port as number,
+            tls_enabled: fallbackServer.tls_enabled as boolean,
+          };
+          activeServerId = fallbackServer.id;
+        }
       }
     }
 
@@ -660,8 +682,8 @@ async function processEmail(
       extraHeaders,
     });
 
-    // Send via SMTP
-    const smtpResult = await sendViaSMTP({
+    // Send via SMTP (with inline failover on connection failure)
+    let smtpResult = await sendViaSMTP({
       host: server.ip_address,
       port: server.port,
       tlsEnabled: server.tls_enabled,
@@ -669,6 +691,51 @@ async function processEmail(
       to: toAddress,
       mimeData,
     });
+
+    // If primary fails with connection error, try failover to secondary
+    if (!smtpResult.success && smtpResult.error?.includes("timed out") || !smtpResult.success && smtpResult.error?.includes("Connection refused") || !smtpResult.success && smtpResult.error?.includes("Connection closed")) {
+      // Increment consecutive failures on the failed server
+      if (activeServerId) {
+        await supabase.rpc && await supabase
+          .from("smtp_servers")
+          .update({ consecutive_failures: (await supabase.from("smtp_servers").select("consecutive_failures").eq("id", activeServerId).maybeSingle()).data?.consecutive_failures + 1 || 1 })
+          .eq("id", activeServerId);
+      }
+
+      // Try a secondary server
+      const { data: secondaryServer } = await supabase
+        .from("smtp_servers")
+        .select("id, hostname, ip_address, port, tls_enabled")
+        .eq("user_id", userId)
+        .eq("status", "online")
+        .neq("id", activeServerId || "")
+        .limit(1)
+        .maybeSingle();
+
+      if (secondaryServer) {
+        console.log(`Failover: retrying email ${emailId} via ${secondaryServer.hostname}`);
+        smtpResult = await sendViaSMTP({
+          host: String(secondaryServer.ip_address),
+          port: secondaryServer.port,
+          tlsEnabled: secondaryServer.tls_enabled,
+          from: fromAddress,
+          to: toAddress,
+          mimeData,
+        });
+
+        if (smtpResult.success) {
+          activeServerId = secondaryServer.id;
+          // Log failover event
+          await supabase.from("failover_events").insert({
+            user_id: userId,
+            from_server_id: smtpServerId,
+            to_server_id: secondaryServer.id,
+            trigger_reason: "Inline failover — primary connection failed",
+            trigger_details: { original_error: smtpResult.error, email_id: emailId },
+          });
+        }
+      }
+    }
 
     if (smtpResult.success) {
       // Success: update queue status
