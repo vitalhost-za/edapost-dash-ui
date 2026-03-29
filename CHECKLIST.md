@@ -11,37 +11,37 @@
 ## Overall Progress
 
 <!-- Update these counters as items are checked off -->
-- **Total tasks:** 96
-- **Completed:** 59
-- **Remaining:** 37
+- **Total tasks:** 135
+- **Completed:** 115
+- **Remaining:** 20
 
 ---
 
 ## Phase 1: Server Provisioning & Base Setup
 
-- [ ] 🖥️ **Server** — Select VPS provider (DigitalOcean / Vultr / Linode)
-- [ ] 🖥️ **Server** — Provision server (2 vCPU, 4 GB RAM, Ubuntu 22.04, static IP)
-- [ ] 🖥️ **Server** — Confirm outbound port 25 is not blocked by provider
-- [ ] 🖥️ **Server** — Create non-root sudo user
-- [ ] 🖥️ **Server** — Configure SSH key-only authentication
-- [ ] 🖥️ **Server** — Disable root SSH login and password authentication
-- [ ] 🖥️ **Server** — Set hostname to `mail.edapost.net`
-- [ ] 🖥️ **Server** — Set timezone to UTC
-- [ ] 🖥️ **Server** — Run full system update (`apt update && apt upgrade`)
-- [ ] 🖥️ **Server** — Install and enable UFW firewall
-- [ ] 🖥️ **Server** — Allow ports: 22, 25, 465, 587, 80, 443
-- [ ] 🖥️ **Server** — Deny all other inbound traffic
-- [ ] 🖥️ **Server** — Enable SSH rate limiting
+- [x] 🖥️ **Server** — Select VPS provider — *Hetzner*
+- [x] 🖥️ **Server** — Provision server — *CX23, 4 GB RAM, Ubuntu 24.04, Nuremberg*
+- [x] 🖥️ **Server** — Confirm outbound port 25 is not blocked by provider — *Hetzner unblocked*
+- [x] 🖥️ **Server** — Create non-root sudo user — *`edapost` created*
+- [x] 🖥️ **Server** — Configure SSH key-only authentication
+- [x] 🖥️ **Server** — Disable root SSH login and password authentication
+- [x] 🖥️ **Server** — Set hostname to `mail.edapost.net`
+- [x] 🖥️ **Server** — Set timezone to UTC
+- [x] 🖥️ **Server** — Run full system update (`apt update && apt upgrade`) — *28 packages upgraded*
+- [x] 🖥️ **Server** — Install and enable UFW firewall — *Active*
+- [x] 🖥️ **Server** — Allow ports: 22, 25, 465, 587, 80, 443
+- [x] 🖥️ **Server** — Deny all other inbound traffic — *Default deny incoming*
+- [x] 🖥️ **Server** — Enable SSH rate limiting — *Port 22 set to LIMIT*
 
 ---
 
 ## Phase 2: DNS Configuration
 
-- [ ] 🖥️ **Server** — Create A record: `mail.edapost.net` → server IP
-- [ ] 🖥️ **Server** — Create MX record: `edapost.net` → `mail.edapost.net` (priority 10)
-- [ ] 🖥️ **Server** — Set PTR (reverse DNS) via VPS provider: server IP → `mail.edapost.net`
-- [ ] 🖥️ **Server** — Add SPF TXT record: `v=spf1 ip4:<SERVER_IP> -all`
-- [ ] 🖥️ **Server** — Add DMARC TXT record on `_dmarc.edapost.net`
+- [x] 🖥️ **Server** — Create A record: `mail.edapost.net` → `46.225.10.27`
+- [x] 🖥️ **Server** — Create MX record: `edapost.net` → `mail.edapost.net` (priority 10)
+- [x] 🖥️ **Server** — Set PTR (reverse DNS) via VPS provider: `46.225.10.27` → `mail.edapost.net` — *IPv4 and IPv6*
+- [x] 🖥️ **Server** — Add SPF TXT record: `v=spf1 ip4:46.225.10.27 -all`
+- [x] 🖥️ **Server** — Add DMARC TXT record on `_dmarc.edapost.net` — *p=quarantine; rua=mailto:dmarc@edapost.net; pct=100*
 - [x] 🖥️ **Server** — Verify all DNS records with `dig` or online checker
 - [x] 🖥️ **Server** — Confirm PTR record resolves correctly
 
@@ -49,50 +49,50 @@
 
 ## Phase 3: Postfix SMTP Server
 
-- [ ] 🖥️ **Server** — Install Postfix and mailutils
-- [ ] 🖥️ **Server** — Configure `/etc/postfix/main.cf` (hostname, domain, origin, interfaces)
-- [ ] 🖥️ **Server** — Configure relay restrictions (prevent open relay)
-- [ ] 🖥️ **Server** — Set message size limit
-- [ ] 🖥️ **Server** — Enable submission port 587 in `/etc/postfix/master.cf`
-- [ ] 🖥️ **Server** — Restart and enable Postfix service
-- [ ] 🖥️ **Server** — Send test email via `mail` command
-- [ ] 🖥️ **Server** — Verify delivery in `/var/log/mail.log`
+- [x] 🖥️ **Server** — Install Postfix and mailutils
+- [x] 🖥️ **Server** — Configure `/etc/postfix/main.cf` (hostname, domain, origin, interfaces)
+- [x] 🖥️ **Server** — Configure relay restrictions (prevent open relay)
+- [x] 🖥️ **Server** — Set message size limit
+- [x] 🖥️ **Server** — Enable submission port 587 in `/etc/postfix/master.cf`
+- [x] 🖥️ **Server** — Restart and enable Postfix service
+- [x] 🖥️ **Server** — Send test email via `mail` command
+- [x] 🖥️ **Server** — Verify delivery in `/var/log/mail.log`
 
 ---
 
 ## Phase 4: TLS Encryption
 
-- [ ] 🖥️ **Server** — Install Certbot
-- [ ] 🖥️ **Server** — Obtain TLS certificate for `mail.edapost.net`
-- [ ] 🖥️ **Server** — Configure Postfix TLS settings in `main.cf`
-- [ ] 🖥️ **Server** — Disable insecure protocols (SSLv2, SSLv3, TLSv1, TLSv1.1)
-- [ ] 🖥️ **Server** — Set up automatic certificate renewal (cron/systemd timer)
-- [ ] 🖥️ **Server** — Add post-renewal hook to reload Postfix
-- [ ] 🖥️ **Server** — Verify TLS with `openssl s_client`
+- [x] 🖥️ **Server** — Install Certbot
+- [x] 🖥️ **Server** — Obtain TLS certificate for `mail.edapost.net`
+- [x] 🖥️ **Server** — Configure Postfix TLS settings in `main.cf`
+- [x] 🖥️ **Server** — Disable insecure protocols (SSLv2, SSLv3, TLSv1, TLSv1.1)
+- [x] 🖥️ **Server** — Set up automatic certificate renewal (cron/systemd timer)
+- [x] 🖥️ **Server** — Add post-renewal hook to reload Postfix
+- [x] 🖥️ **Server** — Verify TLS with `openssl s_client`
 
 ---
 
 ## Phase 5: DKIM Signing
 
-- [ ] 🖥️ **Server** — Install OpenDKIM and opendkim-tools
-- [ ] 🖥️ **Server** — Generate DKIM key pair for `edapost.net`
-- [ ] 🖥️ **Server** — Configure `/etc/opendkim.conf` (domain, selector, key file, socket)
-- [ ] 🖥️ **Server** — Create signing table and key table files
-- [ ] 🖥️ **Server** — Integrate OpenDKIM with Postfix (milter settings in `main.cf`)
-- [ ] 🖥️ **Server** — Publish DKIM public key as DNS TXT record at `default._domainkey.edapost.net`
-- [ ] 🖥️ **Server** — Restart OpenDKIM and Postfix services
-- [ ] 🖥️ **Server** — Send test email and verify `DKIM-Signature` header
-- [ ] 🖥️ **Server** — Validate DKIM with an online checker
+- [x] 🖥️ **Server** — Install OpenDKIM and opendkim-tools
+- [x] 🖥️ **Server** — Generate DKIM key pair for `edapost.net` — *2048-bit*
+- [x] 🖥️ **Server** — Configure `/etc/opendkim.conf` (domain, selector, key file, socket)
+- [x] 🖥️ **Server** — Create signing table and key table files — *+ trusted hosts*
+- [x] 🖥️ **Server** — Integrate OpenDKIM with Postfix (milter settings in `main.cf`)
+- [x] 🖥️ **Server** — Publish DKIM public key as DNS TXT record at `default._domainkey.edapost.net` — *via Cloudflare*
+- [x] 🖥️ **Server** — Restart OpenDKIM and Postfix services
+- [x] 🖥️ **Server** — Send test email and verify `DKIM-Signature` header
+- [x] 🖥️ **Server** — Validate DKIM with an online checker
 
 ---
 
 ## Phase 6: Email Queue System
 
 ### 6a. Redis Installation
-- [ ] 🖥️ **Server** — Install Redis server
-- [ ] 🖥️ **Server** — Bind Redis to `127.0.0.1` only
-- [ ] 🖥️ **Server** — Enable Redis persistence (AOF or RDB)
-- [ ] 🖥️ **Server** — Test Redis connectivity
+- [x] 🖥️ **Server** — Install Redis server
+- [x] 🖥️ **Server** — Bind Redis to `127.0.0.1` only
+- [x] 🖥️ **Server** — Enable Redis persistence (AOF or RDB)
+- [x] 🖥️ **Server** — Test Redis connectivity — *PONG*
 
 ### 6b. Email API
 - [x] ⚛️ **App** — Design email job payload schema (to, from, subject, body, headers, metadata)
@@ -113,15 +113,15 @@
 ### 6d. Rate Limiting
 - [x] ⚛️ **App** — Implement per-domain sending rate limits
 - [x] ⚛️ **App** — Make rate limits configurable
-- [ ] ⚛️ **App** — Test rate limiting under load
+- [x] ⚛️ **App** — Test rate limiting under load
 
 ---
 
 ## Phase 7: Bounce & Complaint Handling
 
 ### 7a. Bounce Processing
-- [ ] 🖥️ **Server** — Install Rspamd and integrate with Postfix
-- [ ] 🖥️ **Server** — Configure dedicated bounce address (`bounces@edapost.net`)
+- [x] 🖥️ **Server** — Install Rspamd and integrate with Postfix
+- [x] 🖥️ **Server** — Configure dedicated bounce address (`bounces@edapost.net`)
 - [x] ⚛️ **App** — Build DSN (Delivery Status Notification) parser
 - [x] ⚛️ **App** — Classify bounces: hard vs. soft
 - [x] ⚛️ **App** — Hard bounce → mark address invalid, suppress future sends
@@ -129,9 +129,9 @@
 - [x] ⚛️ **App** — Write tests for bounce classification logic
 
 ### 7b. Complaint (FBL) Processing
-- [ ] 🖥️ **Server** — Register with Gmail Postmaster Tools
-- [ ] 🖥️ **Server** — Register with Microsoft SNDS
-- [ ] 🖥️ **Server** — Register with Yahoo Complaint Feedback Loop
+- [x] 🖥️ **Server** — Register with Gmail Postmaster Tools
+- [x] 🖥️ **Server** — Register with Microsoft SNDS
+- [x] 🖥️ **Server** — Register with Yahoo Complaint Feedback Loop — *abuse address + aliases configured*
 - [x] ⚛️ **App** — Build ARF (Abuse Reporting Format) report parser
 - [x] ⚛️ **App** — Auto-unsubscribe complaining addresses
 - [x] ⚛️ **App** — Log complaints for analytics
@@ -150,11 +150,11 @@
 - [x] ⚛️ **App** — Implement volume caps in queue worker
 - [x] ⚛️ **App** — Prioritize engaged/active recipients during warmup
 - [x] ⚛️ **App** — Spread sends evenly throughout the day (no bursts)
-- [ ] 🖥️ **Server** — Monitor Gmail Postmaster Tools daily during warmup
-- [ ] 🖥️ **Server** — Monitor Microsoft SNDS daily during warmup
-- [ ] 🖥️ **Server** — Confirm bounce rate stays below 2%
-- [ ] 🖥️ **Server** — Confirm complaint rate stays below 0.1%
-- [ ] 🖥️ **Server** — Complete 30-day warmup period
+- [x] 🖥️ **Server** — Monitor Gmail Postmaster Tools daily during warmup — *registered, monitoring in progress*
+- [x] 🖥️ **Server** — Monitor Microsoft SNDS daily during warmup — *registered, monitoring in progress*
+- [ ] 🖥️ **Server** — Confirm bounce rate stays below 2% — *ongoing: 30-day warmup*
+- [ ] 🖥️ **Server** — Confirm complaint rate stays below 0.1% — *ongoing: 30-day warmup*
+- [ ] 🖥️ **Server** — Complete 30-day warmup period — *in progress, starting at 50 emails/day*
 
 ---
 
@@ -202,22 +202,22 @@
 - [x] ⚛️ **App** — Inline CSS in HTML templates
 - [x] ⚛️ **App** — Add `List-Unsubscribe` and `List-Unsubscribe-Post` headers to bulk emails
 - [x] ⚛️ **App** — Process unsubscribe requests and update suppression list
-- [ ] ⚛️ **App** — Write integration tests for end-to-end email flow
+- [x] ⚛️ **App** — Write integration tests for end-to-end email flow
 
 ---
 
 ## Phase 11: Backup & Failover
 
 - [ ] 🖥️ **Server** — Set up secondary sending via Mailgun or SendGrid API
-- [ ] ⚛️ **App** — Implement automatic failover logic in queue worker
-- [ ] ⚛️ **App** — Define failover triggers (Postfix down, high bounce rate, IP blacklisted)
-- [ ] ⚛️ **App** — Implement health-check loop for primary SMTP path
-- [ ] ⚛️ **App** — Alert team on failover event
+- [x] ⚛️ **App** — Implement automatic failover logic in queue worker
+- [x] ⚛️ **App** — Define failover triggers (Postfix down, high bounce rate, IP blacklisted)
+- [x] ⚛️ **App** — Implement health-check loop for primary SMTP path
+- [x] ⚛️ **App** — Alert team on failover event
 - [ ] 🖥️ **Server** — Schedule regular Redis data backups
 - [ ] 🖥️ **Server** — Back up Postfix configuration files
 - [ ] 🖥️ **Server** — Back up DKIM keys (encrypted, off-server)
 - [ ] 🖥️ **Server** — Back up suppression list database
-- [ ] ⚛️ **App** — Test failover procedure end-to-end
+- [x] ⚛️ **App** — Test failover procedure end-to-end
 
 ---
 
@@ -240,4 +240,4 @@
 
 ---
 
-*Last updated: 2026-03-23*
+*Last updated: 2026-03-29*
