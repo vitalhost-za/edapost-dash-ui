@@ -161,8 +161,8 @@ Deno.test({
     const { data: primary } = await client.from("smtp_servers").insert({
       user_id: TEST_USER_ID,
       hostname: "primary-reroute.local",
-      ip_address: "192.0.2.20",
-      port: 25,
+      ip_address: "127.0.0.1",
+      port: 1,
       status: "online",
       is_primary: true,
       failover_group: "reroute-test",
