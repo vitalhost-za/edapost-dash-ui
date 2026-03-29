@@ -12,8 +12,8 @@
 
 <!-- Update these counters as items are checked off -->
 - **Total tasks:** 135
-- **Completed:** 119
-- **Remaining:** 16
+- **Completed:** 121
+- **Remaining:** 14
 
 ---
 
@@ -186,8 +186,8 @@
 - [x] ⚛️ **App** — Set up alert notifications (Slack / email / PagerDuty)
 
 ### 9d. Logging
-- [ ] 🖥️ **Server** — Configure structured Postfix logging
-- [ ] 🖥️ **Server** — (Optional) Set up centralized log aggregation (Loki or ELK)
+- [x] 🖥️ **Server** — Configure structured Postfix logging
+- [x] 🖥️ **Server** — (Optional) Set up centralized log aggregation (Loki or ELK) — *Skipped: 4 GB RAM constraint; using logrotate with 30-day compressed retention instead*
 
 ---
 
