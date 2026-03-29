@@ -9,7 +9,7 @@ function getServiceClient() {
   return createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 }
 
-const TEST_USER_ID = "00000000-0000-0000-0000-000000failov";
+const TEST_USER_ID = "00000000-0000-0000-0000-0000000fa110";
 
 async function cleanupTestData(client: any) {
   await client.from("failover_events").delete().eq("user_id", TEST_USER_ID);
