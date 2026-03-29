@@ -123,8 +123,16 @@ Deno.test({
     });
     assertEquals(res.status, 200);
     const body = await res.json();
+    console.log("FAILOVER TEST BODY:", JSON.stringify(body, null, 2));
+    console.log("PRIMARY ID:", primary!.id);
 
     const primaryResult = body.results?.find((r: any) => r.server_id === primary!.id);
+    console.log("PRIMARY RESULT:", JSON.stringify(primaryResult));
+    
+    // If no specific result found, check if any failover was triggered
+    if (!primaryResult) {
+      console.log("All results:", body.results?.map((r: any) => r.server_id));
+    }
     assertEquals(primaryResult?.failoverTriggered, true);
 
     // Verify failover event logged
