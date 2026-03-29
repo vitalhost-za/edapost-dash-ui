@@ -360,7 +360,7 @@ export default function Analytics() {
     const total = rateLimitedEmails.length;
     return { total, throttled, allowed: total - throttled, throttleRate: total > 0 ? +((throttled / total) * 100).toFixed(1) : 0 };
   }, [rateLimitedEmails]);
-
+  const isLoading = statsLoading || logsLoading;
 
 
   return (
