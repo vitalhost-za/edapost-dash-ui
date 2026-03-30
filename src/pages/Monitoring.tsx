@@ -107,6 +107,23 @@ export default function Monitoring() {
     refetchInterval: 10000,
   });
 
+  // Queue latency history (completed emails: sent_at - created_at)
+  const { data: latencyHistory } = useQuery({
+    queryKey: ["monitoring-latency-history", timeRange],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("email_queue")
+        .select("created_at, sent_at")
+        .eq("status", "sent")
+        .not("sent_at", "is", null)
+        .gte("sent_at", since.toISOString())
+        .order("sent_at", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+    refetchInterval: 30000,
+  });
+
   // Alert settings
   const { data: alertSettings } = useQuery({
     queryKey: ["monitoring-alert-settings"],
