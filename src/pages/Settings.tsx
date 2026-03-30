@@ -466,12 +466,14 @@ export default function SettingsPage() {
     alert_queue_depth: settings.alert_queue_depth,
     alert_delivery_rate: settings.alert_delivery_rate,
     alert_tls_expiry_days: settings.alert_tls_expiry_days,
+    alert_queue_latency_seconds: settings.alert_queue_latency_seconds,
     notify_bounces: settings.notify_bounces,
     notify_complaints: settings.notify_complaints,
     notify_queue_full: settings.notify_queue_full,
     notify_server_down: settings.notify_server_down,
     notify_tls_expiry: settings.notify_tls_expiry,
     notify_delivery_rate: settings.notify_delivery_rate,
+    notify_queue_latency: settings.notify_queue_latency,
   });
 
   const handleSaveWarmup = () => saveMutation.mutate({
