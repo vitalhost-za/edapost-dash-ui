@@ -52,6 +52,8 @@ interface UserSettings {
   notify_server_down: boolean;
   notify_tls_expiry: boolean;
   notify_delivery_rate: boolean;
+  notify_queue_latency: boolean;
+  alert_queue_latency_seconds: number | null;
   warmup_enabled: boolean;
   worker_concurrency: number;
   worker_batch_size: number;
