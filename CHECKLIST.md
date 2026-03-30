@@ -12,8 +12,8 @@
 
 <!-- Update these counters as items are checked off -->
 - **Total tasks:** 135
-- **Completed:** 121
-- **Remaining:** 14
+- **Completed:** 122
+- **Remaining:** 13
 
 ---
 
@@ -172,7 +172,7 @@
 - [x] ⚛️ **App** — Track bounce rate (from bounce processor)
 - [x] ⚛️ **App** — Track complaint rate (from FBL processor)
 - [x] ⚛️ **App** — Track queue depth (Redis)
-- [ ] ⚛️ **App** — Track queue latency / oldest job age (Redis)
+- [x] ⚛️ **App** — Track queue latency / oldest job age (Redis)
 
 ### 9c. Dashboards & Alerts
 - [x] ⚛️ **App** — Create Grafana dashboard for email metrics
@@ -240,4 +240,4 @@
 
 ---
 
-*Last updated: 2026-03-29*
+*Last updated: 2026-03-30*
