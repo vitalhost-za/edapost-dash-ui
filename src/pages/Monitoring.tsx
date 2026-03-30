@@ -221,7 +221,7 @@ export default function Monitoring() {
     });
 
     // Queue latency
-    const latencyThreshold = Number(thresholds.alert_queue_latency_seconds) || 300;
+    const latencyThreshold = Number((thresholds as any).alert_queue_latency_seconds) || 300;
     const oldestMs = queueStats?.oldestAge ?? 0;
     const oldestSec = Math.floor(oldestMs / 1000);
     const latencyValue = oldestMs === 0 ? "0s" : oldestSec < 60 ? `${oldestSec}s` : `${Math.floor(oldestSec / 60)}m`;
