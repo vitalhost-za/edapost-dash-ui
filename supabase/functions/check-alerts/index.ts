@@ -228,6 +228,32 @@ Deno.serve(async (req) => {
         }
       }
 
+      // Check queue latency (oldest job age)
+      if (settings.notify_queue_latency !== false) {
+        const { data: oldestJob } = await supabase
+          .from("email_queue")
+          .select("created_at")
+          .eq("user_id", userId)
+          .in("status", ["queued", "processing"])
+          .order("created_at", { ascending: true })
+          .limit(1);
+
+        if (oldestJob && oldestJob.length > 0) {
+          const ageSeconds = Math.floor((Date.now() - new Date(oldestJob[0].created_at).getTime()) / 1000);
+          const latencyThreshold = settings.alert_queue_latency_seconds ?? 300;
+          if (ageSeconds > latencyThreshold) {
+            const formatAge = ageSeconds < 60 ? `${ageSeconds}s` : ageSeconds < 3600 ? `${Math.floor(ageSeconds / 60)}m ${ageSeconds % 60}s` : `${Math.floor(ageSeconds / 3600)}h ${Math.floor((ageSeconds % 3600) / 60)}m`;
+            alerts.push({
+              alert_type: "Queue Latency",
+              severity: ageSeconds > latencyThreshold * 2 ? "critical" : "warning",
+              message: `Oldest queued job is ${formatAge} old`,
+              value: formatAge,
+              threshold: `> ${latencyThreshold}s`,
+            });
+          }
+        }
+      }
+
       if (alerts.length > 0) {
         // Send notifications
         if (settings.slack_webhook_url) {
