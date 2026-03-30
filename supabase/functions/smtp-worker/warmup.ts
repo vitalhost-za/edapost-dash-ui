@@ -214,7 +214,7 @@ export async function prioritizeByEngagement(
     .eq("user_id", userId)
     .in("email", toAddresses);
 
-  const bouncedSet = new Set((bouncedLogs || []).map((b) => b.email));
+  const bouncedSet = new Set((bouncedLogs || []).map((b: { email: string }) => b.email));
 
   // Score: engaged > never-bounced-unknown > previously-bounced
   return [...emails].sort((a, b) => {
