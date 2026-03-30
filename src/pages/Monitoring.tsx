@@ -447,6 +447,49 @@ export default function Monitoring() {
                   <p className="text-[10px] text-muted-foreground mt-3">
                     ⏱ Thresholds — Healthy: &lt;2m avg wait · Busy: 2–10m · Backlogged: &gt;10m oldest job
                   </p>
+
+                  {/* Latency History Chart */}
+                  {(() => {
+                    const useHourly = timeRange === "1h" || timeRange === "6h" || timeRange === "24h";
+                    const grouped: Record<string, { totalMs: number; count: number; maxMs: number }> = {};
+                    for (const row of (latencyHistory ?? [])) {
+                      if (!row.sent_at) continue;
+                      const key = useHourly
+                        ? format(startOfHour(new Date(row.sent_at)), "HH:mm")
+                        : format(startOfDay(new Date(row.sent_at)), "MMM d");
+                      if (!grouped[key]) grouped[key] = { totalMs: 0, count: 0, maxMs: 0 };
+                      const waitMs = new Date(row.sent_at).getTime() - new Date(row.created_at).getTime();
+                      grouped[key].totalMs += waitMs;
+                      grouped[key].count += 1;
+                      if (waitMs > grouped[key].maxMs) grouped[key].maxMs = waitMs;
+                    }
+                    const chartData = Object.entries(grouped).map(([label, v]) => ({
+                      label,
+                      avgWait: +(v.totalMs / v.count / 1000).toFixed(1),
+                      maxWait: +(v.maxMs / 1000).toFixed(1),
+                      volume: v.count,
+                    }));
+
+                    return chartData.length > 0 ? (
+                      <div className="mt-5">
+                        <h4 className="text-xs font-medium text-muted-foreground mb-3">Wait Time History (seconds)</h4>
+                        <ResponsiveContainer width="100%" height={220}>
+                          <AreaChart data={chartData}>
+                            <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                            <XAxis dataKey="label" tick={{ fontSize: 10, className: "fill-muted-foreground" }} axisLine={false} tickLine={false} />
+                            <YAxis tick={{ fontSize: 10, className: "fill-muted-foreground" }} axisLine={false} tickLine={false} label={{ value: "sec", angle: -90, position: "insideLeft", style: { fontSize: 10, fill: "hsl(var(--muted-foreground))" } }} />
+                            <Tooltip contentStyle={tooltipStyle} formatter={(value: number, name: string) => [`${value}s`, name === "avgWait" ? "Avg Wait" : name === "maxWait" ? "Max Wait" : "Volume"]} />
+                            <Area type="monotone" dataKey="maxWait" stroke="hsl(0, 72%, 51%)" fill="hsl(0, 72%, 51%)" fillOpacity={0.1} name="Max Wait" strokeWidth={1.5} />
+                            <Area type="monotone" dataKey="avgWait" stroke="hsl(217, 91%, 60%)" fill="hsl(217, 91%, 60%)" fillOpacity={0.2} name="Avg Wait" strokeWidth={2} />
+                          </AreaChart>
+                        </ResponsiveContainer>
+                      </div>
+                    ) : (
+                      <div className="mt-5 flex items-center justify-center h-[120px] text-xs text-muted-foreground border border-dashed border-border rounded-lg">
+                        No completed emails in this period to compute latency history
+                      </div>
+                    );
+                  })()}
                 </div>
               </>
             )}
