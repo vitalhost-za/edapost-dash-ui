@@ -220,8 +220,20 @@ export default function Monitoring() {
       threshold: "Any down",
     });
 
+    // Queue latency
+    const latencyThreshold = Number(thresholds.alert_queue_latency_seconds) || 300;
+    const oldestMs = queueStats?.oldestAge ?? 0;
+    const oldestSec = Math.floor(oldestMs / 1000);
+    const latencyValue = oldestMs === 0 ? "0s" : oldestSec < 60 ? `${oldestSec}s` : `${Math.floor(oldestSec / 60)}m`;
+    items.push({
+      label: "Queue Latency",
+      status: oldestSec > latencyThreshold ? "critical" : oldestSec > latencyThreshold * 0.7 ? "warning" : "ok",
+      value: latencyValue,
+      threshold: `> ${latencyThreshold}s`,
+    });
+
     return items;
-  }, [deliveryRate, bounceRate, complaintRate, totalQueueDepth, servers, alertSettings]);
+  }, [deliveryRate, bounceRate, complaintRate, totalQueueDepth, servers, alertSettings, queueStats]);
 
   // Trend chart data
   const trendData = useMemo(() => {
