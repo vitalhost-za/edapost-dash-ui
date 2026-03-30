@@ -802,6 +802,7 @@ export default function SettingsPage() {
                   { key: "notify_bounces", label: "Bounce alerts", desc: "Get notified when bounce rate exceeds threshold" },
                   { key: "notify_complaints", label: "Complaint alerts", desc: "Get notified about spam complaints" },
                   { key: "notify_queue_full", label: "Queue depth alerts", desc: "Alert when queue exceeds threshold" },
+                  { key: "notify_queue_latency", label: "Queue latency alerts", desc: "Alert when oldest job age exceeds threshold" },
                   { key: "notify_tls_expiry", label: "TLS cert expiry alerts", desc: "Alert when TLS certificate is close to expiry" },
                   { key: "notify_server_down", label: "Postfix process down", desc: "Alert when an SMTP server goes offline" },
                 ].map((n) => (
