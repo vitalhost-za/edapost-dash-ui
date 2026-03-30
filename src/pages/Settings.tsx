@@ -52,6 +52,8 @@ interface UserSettings {
   notify_server_down: boolean;
   notify_tls_expiry: boolean;
   notify_delivery_rate: boolean;
+  notify_queue_latency: boolean;
+  alert_queue_latency_seconds: number | null;
   warmup_enabled: boolean;
   worker_concurrency: number;
   worker_batch_size: number;
@@ -464,12 +466,14 @@ export default function SettingsPage() {
     alert_queue_depth: settings.alert_queue_depth,
     alert_delivery_rate: settings.alert_delivery_rate,
     alert_tls_expiry_days: settings.alert_tls_expiry_days,
+    alert_queue_latency_seconds: settings.alert_queue_latency_seconds,
     notify_bounces: settings.notify_bounces,
     notify_complaints: settings.notify_complaints,
     notify_queue_full: settings.notify_queue_full,
     notify_server_down: settings.notify_server_down,
     notify_tls_expiry: settings.notify_tls_expiry,
     notify_delivery_rate: settings.notify_delivery_rate,
+    notify_queue_latency: settings.notify_queue_latency,
   });
 
   const handleSaveWarmup = () => saveMutation.mutate({
@@ -800,6 +804,7 @@ export default function SettingsPage() {
                   { key: "notify_bounces", label: "Bounce alerts", desc: "Get notified when bounce rate exceeds threshold" },
                   { key: "notify_complaints", label: "Complaint alerts", desc: "Get notified about spam complaints" },
                   { key: "notify_queue_full", label: "Queue depth alerts", desc: "Alert when queue exceeds threshold" },
+                  { key: "notify_queue_latency", label: "Queue latency alerts", desc: "Alert when oldest job age exceeds threshold" },
                   { key: "notify_tls_expiry", label: "TLS cert expiry alerts", desc: "Alert when TLS certificate is close to expiry" },
                   { key: "notify_server_down", label: "Postfix process down", desc: "Alert when an SMTP server goes offline" },
                 ].map((n) => (
@@ -837,6 +842,10 @@ export default function SettingsPage() {
                 <div className="space-y-2">
                   <Label className="text-xs">TLS Expiry (days)</Label>
                   <Input type="number" value={(settings as any).alert_tls_expiry_days ?? 14} onChange={(e) => updateField("alert_tls_expiry_days", parseInt(e.target.value) || 14)} />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">Queue Latency (seconds)</Label>
+                  <Input type="number" value={(settings as any).alert_queue_latency_seconds ?? 300} onChange={(e) => updateField("alert_queue_latency_seconds", parseInt(e.target.value) || 300)} />
                 </div>
               </div>
 

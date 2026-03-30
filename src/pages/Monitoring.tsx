@@ -76,15 +76,52 @@ export default function Monitoring() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("email_queue")
-        .select("status")
+        .select("status, created_at")
         .in("status", ["queued", "processing", "failed"]);
       if (error) throw error;
-      const queued = data?.filter((e) => e.status === "queued").length ?? 0;
-      const processing = data?.filter((e) => e.status === "processing").length ?? 0;
-      const failed = data?.filter((e) => e.status === "failed").length ?? 0;
-      return { queued, processing, failed, total: queued + processing + failed };
+      const queued = data?.filter((e) => e.status === "queued") ?? [];
+      const processing = data?.filter((e) => e.status === "processing") ?? [];
+      const failed = data?.filter((e) => e.status === "failed") ?? [];
+
+      // Calculate oldest job age and average latency for queued items
+      const now = Date.now();
+      let oldestAge = 0;
+      let totalLatency = 0;
+      const pendingJobs = [...queued, ...processing];
+      for (const job of pendingJobs) {
+        const age = now - new Date(job.created_at).getTime();
+        if (age > oldestAge) oldestAge = age;
+        totalLatency += age;
+      }
+      const avgLatency = pendingJobs.length > 0 ? totalLatency / pendingJobs.length : 0;
+
+      return {
+        queued: queued.length,
+        processing: processing.length,
+        failed: failed.length,
+        total: queued.length + processing.length + failed.length,
+        oldestAge,
+        avgLatency,
+      };
     },
     refetchInterval: 10000,
+  });
+
+  // Queue latency history (completed emails: sent_at - created_at)
+  const { data: latencyHistory } = useQuery({
+    queryKey: ["monitoring-latency-history", timeRange],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("email_queue")
+        .select("created_at, sent_at")
+        .eq("status", "sent")
+        .not("sent_at", "is", null)
+        .gte("sent_at", since.toISOString())
+        .order("sent_at", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+    refetchInterval: 30000,
   });
 
   // Alert settings
@@ -93,7 +130,7 @@ export default function Monitoring() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("user_settings")
-        .select("alert_bounce_rate, alert_complaint_rate, alert_queue_depth, alert_delivery_rate, alert_tls_expiry_days")
+        .select("alert_bounce_rate, alert_complaint_rate, alert_queue_depth, alert_delivery_rate, alert_tls_expiry_days, alert_queue_latency_seconds")
         .maybeSingle();
       if (error) throw error;
       return data;
@@ -183,8 +220,20 @@ export default function Monitoring() {
       threshold: "Any down",
     });
 
+    // Queue latency
+    const latencyThreshold = Number((thresholds as any).alert_queue_latency_seconds) || 300;
+    const oldestMs = queueStats?.oldestAge ?? 0;
+    const oldestSec = Math.floor(oldestMs / 1000);
+    const latencyValue = oldestMs === 0 ? "0s" : oldestSec < 60 ? `${oldestSec}s` : `${Math.floor(oldestSec / 60)}m`;
+    items.push({
+      label: "Queue Latency",
+      status: oldestSec > latencyThreshold ? "critical" : oldestSec > latencyThreshold * 0.7 ? "warning" : "ok",
+      value: latencyValue,
+      threshold: `> ${latencyThreshold}s`,
+    });
+
     return items;
-  }, [deliveryRate, bounceRate, complaintRate, totalQueueDepth, servers, alertSettings]);
+  }, [deliveryRate, bounceRate, complaintRate, totalQueueDepth, servers, alertSettings, queueStats]);
 
   // Trend chart data
   const trendData = useMemo(() => {
@@ -255,7 +304,7 @@ export default function Monitoring() {
         </div>
 
         {/* Alert Status Strip */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
           {alerts.map((a) => (
             <div key={a.label} className={cn(
               "rounded-lg border p-3 transition-colors",
@@ -366,6 +415,93 @@ export default function Monitoring() {
                       </div>
                     ))}
                   </div>
+                </div>
+
+                {/* Queue Latency */}
+                <div className="bg-card border border-border rounded-lg p-5">
+                  <h3 className="text-sm font-medium mb-4 flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-muted-foreground" /> Queue Latency &amp; Oldest Job Age
+                  </h3>
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    {(() => {
+                      const formatDuration = (ms: number) => {
+                        if (ms === 0) return "—";
+                        const secs = Math.floor(ms / 1000);
+                        if (secs < 60) return `${secs}s`;
+                        const mins = Math.floor(secs / 60);
+                        if (mins < 60) return `${mins}m ${secs % 60}s`;
+                        const hrs = Math.floor(mins / 60);
+                        if (hrs < 24) return `${hrs}h ${mins % 60}m`;
+                        const days = Math.floor(hrs / 24);
+                        return `${days}d ${hrs % 24}h`;
+                      };
+                      const oldest = queueStats?.oldestAge ?? 0;
+                      const avg = queueStats?.avgLatency ?? 0;
+                      const pending = (queueStats?.queued ?? 0) + (queueStats?.processing ?? 0);
+                      const oldestSeverity = oldest > 600000 ? "text-destructive" : oldest > 120000 ? "text-warning" : "text-success";
+                      const avgSeverity = avg > 300000 ? "text-destructive" : avg > 60000 ? "text-warning" : "text-success";
+                      return [
+                        { label: "Oldest Job Age", value: formatDuration(oldest), color: oldestSeverity, icon: AlertTriangle },
+                        { label: "Avg Wait Time", value: formatDuration(avg), color: avgSeverity, icon: Gauge },
+                        { label: "Pending Jobs", value: pending.toLocaleString(), color: pending > 100 ? "text-warning" : "text-muted-foreground", icon: ListOrdered },
+                        { label: "Throughput Status", value: oldest === 0 ? "Idle" : oldest > 600000 ? "Backlogged" : oldest > 120000 ? "Busy" : "Healthy", color: oldest === 0 ? "text-muted-foreground" : oldest > 600000 ? "text-destructive" : oldest > 120000 ? "text-warning" : "text-success", icon: Activity },
+                      ].map((m) => (
+                        <div key={m.label} className="bg-secondary rounded-lg p-4 text-center">
+                          <div className="flex items-center justify-center gap-1.5 mb-2">
+                            <m.icon className={cn("h-3.5 w-3.5", m.color)} />
+                            <p className="text-xs text-muted-foreground">{m.label}</p>
+                          </div>
+                          <p className={cn("text-2xl font-bold", m.color)}>{m.value}</p>
+                        </div>
+                      ));
+                    })()}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-3">
+                    ⏱ Thresholds — Healthy: &lt;2m avg wait · Busy: 2–10m · Backlogged: &gt;10m oldest job
+                  </p>
+
+                  {/* Latency History Chart */}
+                  {(() => {
+                    const useHourly = timeRange === "1h" || timeRange === "6h" || timeRange === "24h";
+                    const grouped: Record<string, { totalMs: number; count: number; maxMs: number }> = {};
+                    for (const row of (latencyHistory ?? [])) {
+                      if (!row.sent_at) continue;
+                      const key = useHourly
+                        ? format(startOfHour(new Date(row.sent_at)), "HH:mm")
+                        : format(startOfDay(new Date(row.sent_at)), "MMM d");
+                      if (!grouped[key]) grouped[key] = { totalMs: 0, count: 0, maxMs: 0 };
+                      const waitMs = new Date(row.sent_at).getTime() - new Date(row.created_at).getTime();
+                      grouped[key].totalMs += waitMs;
+                      grouped[key].count += 1;
+                      if (waitMs > grouped[key].maxMs) grouped[key].maxMs = waitMs;
+                    }
+                    const chartData = Object.entries(grouped).map(([label, v]) => ({
+                      label,
+                      avgWait: +(v.totalMs / v.count / 1000).toFixed(1),
+                      maxWait: +(v.maxMs / 1000).toFixed(1),
+                      volume: v.count,
+                    }));
+
+                    return chartData.length > 0 ? (
+                      <div className="mt-5">
+                        <h4 className="text-xs font-medium text-muted-foreground mb-3">Wait Time History (seconds)</h4>
+                        <ResponsiveContainer width="100%" height={220}>
+                          <AreaChart data={chartData}>
+                            <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                            <XAxis dataKey="label" tick={{ fontSize: 10, className: "fill-muted-foreground" }} axisLine={false} tickLine={false} />
+                            <YAxis tick={{ fontSize: 10, className: "fill-muted-foreground" }} axisLine={false} tickLine={false} label={{ value: "sec", angle: -90, position: "insideLeft", style: { fontSize: 10, fill: "hsl(var(--muted-foreground))" } }} />
+                            <Tooltip contentStyle={tooltipStyle} formatter={(value: number, name: string) => [`${value}s`, name === "avgWait" ? "Avg Wait" : name === "maxWait" ? "Max Wait" : "Volume"]} />
+                            <Area type="monotone" dataKey="maxWait" stroke="hsl(0, 72%, 51%)" fill="hsl(0, 72%, 51%)" fillOpacity={0.1} name="Max Wait" strokeWidth={1.5} />
+                            <Area type="monotone" dataKey="avgWait" stroke="hsl(217, 91%, 60%)" fill="hsl(217, 91%, 60%)" fillOpacity={0.2} name="Avg Wait" strokeWidth={2} />
+                          </AreaChart>
+                        </ResponsiveContainer>
+                      </div>
+                    ) : (
+                      <div className="mt-5 flex items-center justify-center h-[120px] text-xs text-muted-foreground border border-dashed border-border rounded-lg">
+                        No completed emails in this period to compute latency history
+                      </div>
+                    );
+                  })()}
                 </div>
               </>
             )}

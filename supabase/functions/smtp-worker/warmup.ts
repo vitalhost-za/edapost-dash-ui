@@ -205,7 +205,7 @@ export async function prioritizeByEngagement(
     .gte("created_at", thirtyDaysAgo)
     .in("to_address", toAddresses);
 
-  const engagedSet = new Set((engagedLogs || []).map((l) => l.to_address));
+  const engagedSet = new Set((engagedLogs || []).map((l: { to_address: string }) => l.to_address));
 
   // Also check for recipients NOT on bounce list (clean recipients)
   const { data: bouncedLogs } = await supabase
@@ -214,7 +214,7 @@ export async function prioritizeByEngagement(
     .eq("user_id", userId)
     .in("email", toAddresses);
 
-  const bouncedSet = new Set((bouncedLogs || []).map((b) => b.email));
+  const bouncedSet = new Set((bouncedLogs || []).map((b: { email: string }) => b.email));
 
   // Score: engaged > never-bounced-unknown > previously-bounced
   return [...emails].sort((a, b) => {
