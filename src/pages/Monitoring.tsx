@@ -130,7 +130,7 @@ export default function Monitoring() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("user_settings")
-        .select("alert_bounce_rate, alert_complaint_rate, alert_queue_depth, alert_delivery_rate, alert_tls_expiry_days")
+        .select("alert_bounce_rate, alert_complaint_rate, alert_queue_depth, alert_delivery_rate, alert_tls_expiry_days, alert_queue_latency_seconds")
         .maybeSingle();
       if (error) throw error;
       return data;
