@@ -76,13 +76,33 @@ export default function Monitoring() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("email_queue")
-        .select("status")
+        .select("status, created_at")
         .in("status", ["queued", "processing", "failed"]);
       if (error) throw error;
-      const queued = data?.filter((e) => e.status === "queued").length ?? 0;
-      const processing = data?.filter((e) => e.status === "processing").length ?? 0;
-      const failed = data?.filter((e) => e.status === "failed").length ?? 0;
-      return { queued, processing, failed, total: queued + processing + failed };
+      const queued = data?.filter((e) => e.status === "queued") ?? [];
+      const processing = data?.filter((e) => e.status === "processing") ?? [];
+      const failed = data?.filter((e) => e.status === "failed") ?? [];
+
+      // Calculate oldest job age and average latency for queued items
+      const now = Date.now();
+      let oldestAge = 0;
+      let totalLatency = 0;
+      const pendingJobs = [...queued, ...processing];
+      for (const job of pendingJobs) {
+        const age = now - new Date(job.created_at).getTime();
+        if (age > oldestAge) oldestAge = age;
+        totalLatency += age;
+      }
+      const avgLatency = pendingJobs.length > 0 ? totalLatency / pendingJobs.length : 0;
+
+      return {
+        queued: queued.length,
+        processing: processing.length,
+        failed: failed.length,
+        total: queued.length + processing.length + failed.length,
+        oldestAge,
+        avgLatency,
+      };
     },
     refetchInterval: 10000,
   });
@@ -366,6 +386,50 @@ export default function Monitoring() {
                       </div>
                     ))}
                   </div>
+                </div>
+
+                {/* Queue Latency */}
+                <div className="bg-card border border-border rounded-lg p-5">
+                  <h3 className="text-sm font-medium mb-4 flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-muted-foreground" /> Queue Latency &amp; Oldest Job Age
+                  </h3>
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    {(() => {
+                      const formatDuration = (ms: number) => {
+                        if (ms === 0) return "—";
+                        const secs = Math.floor(ms / 1000);
+                        if (secs < 60) return `${secs}s`;
+                        const mins = Math.floor(secs / 60);
+                        if (mins < 60) return `${mins}m ${secs % 60}s`;
+                        const hrs = Math.floor(mins / 60);
+                        if (hrs < 24) return `${hrs}h ${mins % 60}m`;
+                        const days = Math.floor(hrs / 24);
+                        return `${days}d ${hrs % 24}h`;
+                      };
+                      const oldest = queueStats?.oldestAge ?? 0;
+                      const avg = queueStats?.avgLatency ?? 0;
+                      const pending = (queueStats?.queued ?? 0) + (queueStats?.processing ?? 0);
+                      const oldestSeverity = oldest > 600000 ? "text-destructive" : oldest > 120000 ? "text-warning" : "text-success";
+                      const avgSeverity = avg > 300000 ? "text-destructive" : avg > 60000 ? "text-warning" : "text-success";
+                      return [
+                        { label: "Oldest Job Age", value: formatDuration(oldest), color: oldestSeverity, icon: AlertTriangle },
+                        { label: "Avg Wait Time", value: formatDuration(avg), color: avgSeverity, icon: Gauge },
+                        { label: "Pending Jobs", value: pending.toLocaleString(), color: pending > 100 ? "text-warning" : "text-muted-foreground", icon: ListOrdered },
+                        { label: "Throughput Status", value: oldest === 0 ? "Idle" : oldest > 600000 ? "Backlogged" : oldest > 120000 ? "Busy" : "Healthy", color: oldest === 0 ? "text-muted-foreground" : oldest > 600000 ? "text-destructive" : oldest > 120000 ? "text-warning" : "text-success", icon: Activity },
+                      ].map((m) => (
+                        <div key={m.label} className="bg-secondary rounded-lg p-4 text-center">
+                          <div className="flex items-center justify-center gap-1.5 mb-2">
+                            <m.icon className={cn("h-3.5 w-3.5", m.color)} />
+                            <p className="text-xs text-muted-foreground">{m.label}</p>
+                          </div>
+                          <p className={cn("text-2xl font-bold", m.color)}>{m.value}</p>
+                        </div>
+                      ));
+                    })()}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-3">
+                    ⏱ Thresholds — Healthy: &lt;2m avg wait · Busy: 2–10m · Backlogged: &gt;10m oldest job
+                  </p>
                 </div>
               </>
             )}
