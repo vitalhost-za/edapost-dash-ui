@@ -76,13 +76,33 @@ export default function Monitoring() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("email_queue")
-        .select("status")
+        .select("status, created_at")
         .in("status", ["queued", "processing", "failed"]);
       if (error) throw error;
-      const queued = data?.filter((e) => e.status === "queued").length ?? 0;
-      const processing = data?.filter((e) => e.status === "processing").length ?? 0;
-      const failed = data?.filter((e) => e.status === "failed").length ?? 0;
-      return { queued, processing, failed, total: queued + processing + failed };
+      const queued = data?.filter((e) => e.status === "queued") ?? [];
+      const processing = data?.filter((e) => e.status === "processing") ?? [];
+      const failed = data?.filter((e) => e.status === "failed") ?? [];
+
+      // Calculate oldest job age and average latency for queued items
+      const now = Date.now();
+      let oldestAge = 0;
+      let totalLatency = 0;
+      const pendingJobs = [...queued, ...processing];
+      for (const job of pendingJobs) {
+        const age = now - new Date(job.created_at).getTime();
+        if (age > oldestAge) oldestAge = age;
+        totalLatency += age;
+      }
+      const avgLatency = pendingJobs.length > 0 ? totalLatency / pendingJobs.length : 0;
+
+      return {
+        queued: queued.length,
+        processing: processing.length,
+        failed: failed.length,
+        total: queued.length + processing.length + failed.length,
+        oldestAge,
+        avgLatency,
+      };
     },
     refetchInterval: 10000,
   });
