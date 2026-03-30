@@ -130,7 +130,7 @@ export default function Monitoring() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("user_settings")
-        .select("alert_bounce_rate, alert_complaint_rate, alert_queue_depth, alert_delivery_rate, alert_tls_expiry_days")
+        .select("alert_bounce_rate, alert_complaint_rate, alert_queue_depth, alert_delivery_rate, alert_tls_expiry_days, alert_queue_latency_seconds")
         .maybeSingle();
       if (error) throw error;
       return data;
@@ -220,8 +220,20 @@ export default function Monitoring() {
       threshold: "Any down",
     });
 
+    // Queue latency
+    const latencyThreshold = Number((thresholds as any).alert_queue_latency_seconds) || 300;
+    const oldestMs = queueStats?.oldestAge ?? 0;
+    const oldestSec = Math.floor(oldestMs / 1000);
+    const latencyValue = oldestMs === 0 ? "0s" : oldestSec < 60 ? `${oldestSec}s` : `${Math.floor(oldestSec / 60)}m`;
+    items.push({
+      label: "Queue Latency",
+      status: oldestSec > latencyThreshold ? "critical" : oldestSec > latencyThreshold * 0.7 ? "warning" : "ok",
+      value: latencyValue,
+      threshold: `> ${latencyThreshold}s`,
+    });
+
     return items;
-  }, [deliveryRate, bounceRate, complaintRate, totalQueueDepth, servers, alertSettings]);
+  }, [deliveryRate, bounceRate, complaintRate, totalQueueDepth, servers, alertSettings, queueStats]);
 
   // Trend chart data
   const trendData = useMemo(() => {
@@ -292,7 +304,7 @@ export default function Monitoring() {
         </div>
 
         {/* Alert Status Strip */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
           {alerts.map((a) => (
             <div key={a.label} className={cn(
               "rounded-lg border p-3 transition-colors",
