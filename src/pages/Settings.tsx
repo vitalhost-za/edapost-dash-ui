@@ -841,7 +841,10 @@ export default function SettingsPage() {
                   <Label className="text-xs">TLS Expiry (days)</Label>
                   <Input type="number" value={(settings as any).alert_tls_expiry_days ?? 14} onChange={(e) => updateField("alert_tls_expiry_days", parseInt(e.target.value) || 14)} />
                 </div>
-              </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">Queue Latency (seconds)</Label>
+                  <Input type="number" value={(settings as any).alert_queue_latency_seconds ?? 300} onChange={(e) => updateField("alert_queue_latency_seconds", parseInt(e.target.value) || 300)} />
+                </div>
 
               <Button className="gap-2" onClick={handleSaveNotifications} disabled={saveMutation.isPending}>
                 {saveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
