@@ -20,6 +20,7 @@ async function testSmtpConnection(
   host: string,
   port: number,
   tlsEnabled: boolean,
+  tlsHostname?: string,
   timeoutMs = 10_000
 ): Promise<{ success: boolean; banner: string | null; tls_ok: boolean; latency_ms: number; error: string | null }> {
   const start = Date.now();
@@ -71,7 +72,7 @@ async function testSmtpConnection(
         if (starttlsResponse.startsWith("220")) {
           // Upgrade to TLS
           try {
-            conn = await Deno.startTls(conn as Deno.TcpConn, { hostname: host });
+            conn = await Deno.startTls(conn as Deno.TcpConn, { hostname: tlsHostname || host });
             tls_ok = true;
           } catch (tlsErr) {
             return {
@@ -158,8 +159,8 @@ serve(async (req) => {
       });
     }
 
-    // Perform the SMTP connection test (try IP first, fall back to hostname)
-    const result = await testSmtpConnection(ip_address, port, tls_enabled);
+    // Perform the SMTP connection test (connect via IP, use hostname for TLS verification)
+    const result = await testSmtpConnection(ip_address, port, tls_enabled, hostname);
 
     // Update server status in the database using service role
     if (server_id) {
